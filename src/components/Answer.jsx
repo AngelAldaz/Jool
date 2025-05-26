@@ -11,8 +11,8 @@ export default function Answer({
   return (
     <section
       className={`rounded-4xl p-6 md:p-8 ${
-        correct ? "bg-green-50" : "bg-white"
-      } border-2 border-green-200 shadow-sm flex flex-col md:flex-row gap-4  text-primary`}
+        correct ? "bg-green-50 border-2 border-green-200" : "bg-white "
+      }  shadow-sm flex flex-col md:flex-row gap-4  text-primary`}
     >
       <AnswerInfo
         userImage={userImage}

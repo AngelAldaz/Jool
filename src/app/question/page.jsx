@@ -105,6 +105,14 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
           markdownContent={markdownContent}
           correct={false}
         />
+        <Answer
+          userImage={userImage}
+          user={user}
+          time={time}
+          stars={stars}
+          markdownContent={markdownContent}
+          correct={false}
+        />
       </main>
       <Footer />
     </>
