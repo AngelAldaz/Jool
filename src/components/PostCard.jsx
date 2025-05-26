@@ -2,7 +2,7 @@ import Image from "next/image";
 import HashTag from "./Hashtag";
 export default function PostCard() {
   return (
-    <div className="w-4/5 mx-auto  rounded-4xl p-6 bg-white  shadow-card">
+    <div className="rounded-4xl p-6 bg-white  shadow-card">
       <section className="flex justify-between">
         <h1 className="text-2xl font-bold max-w-4xl text-text">
           Trouble shooting when using picam2.capture_array to take picture and
