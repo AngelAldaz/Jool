@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-export default function StickyInteractions({ views, comments, stars, liked }) {
+export default function StickyInteractions({ views, responses, stars, liked }) {
   const [isStarHovered, setIsStarHovered] = useState(false);
   const [isLiked, setIsLiked] = useState(liked);
   const [starCount, setStarCount] = useState(stars);
@@ -18,9 +18,9 @@ export default function StickyInteractions({ views, comments, stars, liked }) {
           href=""
           className="flex items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
         >
-          <Image src="/comment.svg" alt="Comments" width={25} height={25} />
+          <Image src="/comment.svg" alt="Responses" width={25} height={25} />
           <span className="text-xs md:text-sm font-medium">
-            {comments} comments
+            {responses} responses
           </span>
         </a>
         <a
