@@ -69,10 +69,8 @@ export default function PostCard({ question }) {
                 </div>
 
                 {/* Responses */}
-                <a
-                  href=""
-                  className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition-colors"
-                  onClick={() => setIsDropdownOpen(false)}
+                <div
+                  className="flex items-center gap-3 px-4 py-3 text-sm"
                 >
                   <Image
                     src="/comment.svg"
@@ -81,7 +79,7 @@ export default function PostCard({ question }) {
                     height={20}
                   />
                   <span className="font-medium">{question.response_count || 0} responses</span>
-                </a>
+                </div>
 
                 {/* Stars */}
                 <a
@@ -118,9 +116,8 @@ export default function PostCard({ question }) {
                 {question.views || 0} views
               </span>
             </div>
-            <a
-              href=""
-              className="flex flex-col items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+            <div
+              className="flex flex-col items-center gap-2 px-3 py-2 rounded-lg transition-colors"
             >
               <Image
                 src="/comment.svg"
@@ -131,7 +128,7 @@ export default function PostCard({ question }) {
               <span className="text-xs md:text-sm font-medium text-center">
                 {question.response_count || 0} responses
               </span>
-            </a>
+            </div>
             <a
               href=""
               className="flex flex-col items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
