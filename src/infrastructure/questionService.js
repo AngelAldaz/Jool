@@ -267,9 +267,63 @@ export const getQuestionsByUser = async (userId) => {
       }
     }
 
-    return await response.json();
+    // Verificar si la respuesta está vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log(`No questions found for user ${userId}`);
+      return [];
+    }
+
+    // Parsear la respuesta solo si contiene datos
+    try {
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(`Error parsing response for user ${userId}:`, parseError);
+      return [];
+    }
   } catch (error) {
     console.error(`Error fetching questions for user ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Deletes a question by ID
+ * @param {number} questionId - The ID of the question to delete
+ * @returns {Promise<void>}
+ */
+export const deleteQuestion = async (questionId) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
+    console.log("Deleting question with ID:", questionId);
+
+    const response = await fetch(endpoints.questions.delete(questionId), {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response from server:", errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.detail || `Error deleting question: ${response.status}`);
+      } catch (parseError) {
+        throw new Error(errorText || `Error deleting question: ${response.statusText}`);
+      }
+    }
+
+    console.log("Question deleted successfully");
+    return;
+  } catch (error) {
+    console.error("Error deleting question:", error);
     throw error;
   }
 };
@@ -281,5 +335,6 @@ export default {
   createResponse,
   deleteResponse,
   getQuestionsByHashtag,
-  getQuestionsByUser
+  getQuestionsByUser,
+  deleteQuestion
 }; 
