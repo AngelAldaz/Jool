@@ -54,6 +54,8 @@ export const loginUser = async (email, password) => {
  */
 export const registerUser = async (userData) => {
   try {
+    console.log("Sending registration data to API:", userData);
+    
     const response = await fetch(endpoints.auth.register, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,20 +64,39 @@ export const registerUser = async (userData) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.log("Error response from API:", errorText);
       
       try {
+        // Intentar parsear como JSON
         const errorData = JSON.parse(errorText);
-        throw new Error(
-          errorData.detail || errorData.message || `Registration error: ${response.status}`
-        );
+        
+        // Si es un objeto JSON válido, devolverlo como string para que la UI lo pueda procesar
+        throw new Error(JSON.stringify(errorData));
       } catch (parseError) {
-        throw new Error(
-          errorText || `Registration error: ${response.statusText}`
-        );
+        // Si no es JSON válido, devolver el texto original
+        if (parseError instanceof SyntaxError) {
+          throw new Error(errorText || `Registration error: ${response.statusText}`);
+        } else {
+          // Si el error ocurrió después de parsear correctamente, propagar ese error
+          throw parseError;
+        }
       }
     }
 
-    return await response.json();
+    // Manejar respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log('Respuesta vacía del servidor al registrar usuario');
+      return null;
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Error al parsear respuesta JSON al registrar usuario:', parseError);
+      return null;
+    }
   } catch (error) {
     console.error("Registration error:", error);
     throw error;

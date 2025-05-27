@@ -1,16 +1,22 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
+import { registerUser } from "@/infrastructure/authService";
 
 export default function SignUp() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    phone: "",
     agreeTerms: false,
   });
 
@@ -28,25 +34,92 @@ export default function SignUp() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    
+    // Reset error when user types
+    if (error) setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     // Validación básica
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      setError("Las contraseñas no coinciden");
       return;
     }
 
     if (!formData.agreeTerms) {
-      alert("Debes aceptar los términos y condiciones");
+      setError("Debes aceptar los términos y condiciones");
       return;
     }
 
-    console.log("Signup attempt:", formData);
-    // Aquí irían las validaciones y el envío del formulario
-    alert("¡Cuenta creada exitosamente! Bienvenido a JOOL!");
+    // Validar longitud del correo electrónico
+    if (formData.email.length > 30) {
+      setError("El correo electrónico no puede exceder los 30 caracteres");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Preparar datos para el backend según la estructura esperada
+      const userData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || null  // opcional
+      };
+      
+      console.log("Sending registration data:", userData);
+      
+      // Enviar solicitud de registro
+      const response = await registerUser(userData);
+      console.log("Registration successful:", response);
+      
+      // Redireccionar al login
+      router.push("/login?registered=true");
+    } catch (error) {
+      console.error("Registration failed:", error);
+      
+      // Extraer y mostrar mensajes de error específicos de la API
+      try {
+        // Ver si el mensaje de error contiene un objeto JSON
+        const errorStr = error.message;
+        if (errorStr.includes('{') && errorStr.includes('}')) {
+          const errorJson = JSON.parse(errorStr);
+          
+          // Si hay errores específicos de campo
+          if (errorJson.errors) {
+            const errorMessages = [];
+            
+            // Recopilar todos los mensajes de error
+            Object.entries(errorJson.errors).forEach(([field, messages]) => {
+              if (Array.isArray(messages)) {
+                // Usar solo el mensaje en español si está disponible (segundo mensaje)
+                const message = messages.length > 1 ? messages[1] : messages[0];
+                errorMessages.push(message);
+              }
+            });
+            
+            if (errorMessages.length > 0) {
+              setError(errorMessages.join('. '));
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (parseError) {
+        // Si hay un error al parsear, simplemente continuar con el mensaje de error genérico
+        console.error("Error parsing API error message:", parseError);
+      }
+      
+      // Mensaje de error genérico si no pudimos extraer uno específico
+      setError(error.message || "Error al crear la cuenta. Por favor, inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,21 +132,28 @@ export default function SignUp() {
             </a>
             <div className="space-y-6">
               <div className="space-y-4">
+                {/* Mensaje de error */}
+                {error && (
+                  <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md">
+                    <p>{error}</p>
+                  </div>
+                )}
+                
                 {/* Nombre y Apellido */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label
-                      htmlFor="firstName"
+                      htmlFor="first_name"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
                       Nombre
                     </label>
                     <input
-                      id="firstName"
-                      name="firstName"
+                      id="first_name"
+                      name="first_name"
                       type="text"
                       required
-                      value={formData.firstName}
+                      value={formData.first_name}
                       onChange={handleInputChange}
                       className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 outline-none text-base"
                       placeholder="Juan"
@@ -81,17 +161,17 @@ export default function SignUp() {
                   </div>
                   <div>
                     <label
-                      htmlFor="lastName"
+                      htmlFor="last_name"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
                       Apellido
                     </label>
                     <input
-                      id="lastName"
-                      name="lastName"
+                      id="last_name"
+                      name="last_name"
                       type="text"
                       required
-                      value={formData.lastName}
+                      value={formData.last_name}
                       onChange={handleInputChange}
                       className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 outline-none text-base"
                       placeholder="Pérez"
@@ -116,6 +196,29 @@ export default function SignUp() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 outline-none text-base"
                     placeholder="tu@ejemplo.com"
+                    maxLength={30}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Máximo 30 caracteres ({30 - formData.email.length} restantes)
+                  </p>
+                </div>
+
+                {/* Teléfono (opcional) */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
+                  >
+                    Teléfono (opcional)
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 outline-none text-base"
+                    placeholder="(999) 123-4567"
                   />
                 </div>
 
@@ -221,9 +324,10 @@ export default function SignUp() {
                 <button
                   type="submit"
                   onClick={handleSubmit}
-                  className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg"
+                  disabled={loading}
+                  className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Crear cuenta
+                  {loading ? "Creando cuenta..." : "Crear cuenta"}
                 </button>
               </div>
 
@@ -250,7 +354,17 @@ export default function SignUp() {
                 </button>
               </div>
 
-              {/* Login Link */}
+              <div className="">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center items-center gap-2 py-3 px-4 border-2 border-gray-200 rounded-xl bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                >
+                  <span>🧑‍🎓</span>
+                  Google
+                </button>
+              </div>
+
+              {/* Enlace para iniciar sesión */}
               <div className="text-center">
                 <p className="text-sm text-gray-600">
                   ¿Ya tienes una cuenta?{" "}
