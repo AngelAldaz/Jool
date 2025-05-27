@@ -15,7 +15,7 @@ export default function StickyInteractions({ views, responses, stars, liked }) {
           <span className="text-xs md:text-sm font-medium">{views} views</span>
         </div>
         <a
-          href=""
+          href="/question#answers"
           className="flex items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
         >
           <Image src="/comment.svg" alt="Responses" width={25} height={25} />
