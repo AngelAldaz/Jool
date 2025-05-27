@@ -29,6 +29,8 @@ export default function QuestionDetail() {
   
   // Estado para eliminar respuestas
   const [deletingResponse, setDeletingResponse] = useState(false);
+  // Estado para el contador de ejecuciones
+  const [fetchCount, setFetchCount] = useState(0);
 
   // Cargar la pregunta cuando se monta el componente
   useEffect(() => {
@@ -45,10 +47,17 @@ export default function QuestionDetail() {
     }
 
     fetchQuestionDetails();
-  }, [questionId, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionId]);
 
   // Función para obtener los detalles de la pregunta
   const fetchQuestionDetails = async () => {
+    setFetchCount(prev => {
+      const newCount = prev + 1;
+      console.log(`Ejecutando fetchQuestionDetails - #${newCount}`, new Date().toISOString());
+      return newCount;
+    });
+    
     try {
       setLoading(true);
       const data = await getQuestionById(questionId);
