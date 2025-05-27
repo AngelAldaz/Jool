@@ -1,10 +1,19 @@
+"use client";
+
 import Footer from "@/components/Footer";
 import QuestionHeading from "@/components/QuestionHeading";
 import ReturnButton from "@/components/ReturnButton";
 import StickyInteractions from "@/components/StickyInteractions";
 import ReactMarkdown from "react-markdown";
 import Answer from "@/components/Answer";
+import { useState } from "react";
+import MDEditor from "@uiw/react-md-editor";
 export default function Home() {
+  // Estado para el formulario de nueva respuesta
+  const [newResponse, setNewResponse] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
+
   let title =
     "Trouble shooting when using picam2.capture_array to take picture and put them into RAM";
   let content =
@@ -61,6 +70,49 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
 - Usa \`print()\` dentro de cada parte crítica para verificar flujo.
 `;
 
+  // Función para manejar el envío de la nueva respuesta
+  const handleSubmitResponse = async (e) => {
+    e.preventDefault();
+
+    if (!newResponse.trim()) {
+      setSubmitMessage("Por favor, escribe una respuesta antes de enviar.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage("");
+    setSubmitMessage("¡Respuesta enviada correctamente!");
+    setNewResponse(""); // Limpiar el formulario
+    setIsSubmitting(false);
+
+    // try {
+    //   // Aquí haces el POST a tu API
+    //   const response = await fetch("/api/responses", {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({
+    //       content: newResponse,
+    //       questionId: "question-id", // Reemplaza con el ID real de la pregunta
+    //       userId: "current-user-id", // Reemplaza con el ID del usuario actual
+    //     }),
+    //   });
+
+    //   if (response.ok) {
+    //     setSubmitMessage("¡Respuesta enviada correctamente!");
+    //     setNewResponse(""); // Limpiar el formulario
+    //   } else {
+    //     throw new Error("Error al enviar la respuesta");
+    //   }
+    // } catch (error) {
+    //   console.error("Error:", error);
+    //   setSubmitMessage("Error al enviar la respuesta. Inténtalo de nuevo.");
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
+  };
+
   return (
     <>
       <main className=" flex-1 space-y-6 mt-5 w-4/5 mx-auto">
@@ -79,9 +131,6 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
                 {title}
               </h1>
             </section>
-            {/* <p className="text-justify md:text-lg text-base text-primary break-words">
-              {content}
-            </p> */}
             <div className="flex flex-col gap-4">
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
@@ -115,6 +164,56 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
           markdownContent={markdownContent}
           correct={false}
         />
+
+        {/* Formulario para nueva respuesta */}
+        <section className="rounded-4xl p-6 md:p-8 bg-white shadow-sm">
+          <h2 className="text-xl md:text-2xl font-bold mb-4">Tu respuesta</h2>
+          <form onSubmit={handleSubmitResponse} className="space-y-4">
+            <div data-color-mode="light">
+              <label
+                htmlFor="response-input"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Escribe tu respuesta (puedes usar Markdown)
+              </label>
+              <MDEditor value={newResponse} onChange={setNewResponse} />
+            </div>
+
+            {/* Vista previa del markdown
+            {newResponse && (
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Vista previa:
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg ">
+                  <ReactMarkdown>{newResponse}</ReactMarkdown>
+                </div>
+              </div>
+            )} */}
+
+            <div className="flex items-center justify-between">
+              <button
+                type="submit"
+                disabled={isSubmitting || !newResponse.trim()}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors hover:cursor-pointer"
+              >
+                {isSubmitting ? "Enviando..." : "Publicar respuesta"}
+              </button>
+
+              {submitMessage && (
+                <p
+                  className={`text-sm ${
+                    submitMessage.includes("Error")
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
+                  {submitMessage}
+                </p>
+              )}
+            </div>
+          </form>
+        </section>
       </main>
       <Footer />
     </>
