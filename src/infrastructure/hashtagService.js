@@ -26,7 +26,20 @@ export const getAllHashtags = async () => {
       }
     }
     
-    return await response.json();
+    // Manejar el caso de respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log('Respuesta vacía del servidor para hashtags');
+      return [];
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Error al parsear respuesta JSON:', parseError);
+      return [];
+    }
   } catch (error) {
     console.error('Error in getAllHashtags:', error);
     throw error;

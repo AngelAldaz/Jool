@@ -26,9 +26,22 @@ export const getAllQuestions = async () => {
       }
     }
 
-    const data = await response.json();
-    console.log("Questions received from server:", data);
-    return data;
+    // Manejar el caso de respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log('Respuesta vacía del servidor para preguntas');
+      return [];
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      const data = JSON.parse(responseText);
+      console.log("Questions received from server:", data);
+      return data;
+    } catch (parseError) {
+      console.error('Error al parsear respuesta JSON de preguntas:', parseError);
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching questions:", error);
     throw error;
@@ -61,9 +74,22 @@ export const getQuestionById = async (id) => {
       }
     }
 
-    const data = await response.json();
-    console.log("Question detail received from server:", data);
-    return data;
+    // Manejar el caso de respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log(`Respuesta vacía del servidor para la pregunta ${id}`);
+      return null;
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      const data = JSON.parse(responseText);
+      console.log("Question detail received from server:", data);
+      return data;
+    } catch (parseError) {
+      console.error(`Error al parsear respuesta JSON de la pregunta ${id}:`, parseError);
+      return null;
+    }
   } catch (error) {
     console.error(`Error fetching question ${id}:`, error);
     throw error;
@@ -97,7 +123,20 @@ export const createQuestion = async (questionData) => {
       }
     }
 
-    return await response.json();
+    // Manejar el caso de respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log('Respuesta vacía al crear pregunta');
+      return null;
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Error al parsear respuesta JSON al crear pregunta:', parseError);
+      return null;
+    }
   } catch (error) {
     console.error("Error creating question:", error);
     throw error;
@@ -134,9 +173,22 @@ export const createResponse = async (responseData) => {
       }
     }
 
-    const data = await response.json();
-    console.log("Response created successfully:", data);
-    return data;
+    // Manejar el caso de respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log('Respuesta vacía al crear respuesta');
+      return null;
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      const data = JSON.parse(responseText);
+      console.log("Response created successfully:", data);
+      return data;
+    } catch (parseError) {
+      console.error('Error al parsear respuesta JSON al crear respuesta:', parseError);
+      return null;
+    }
   } catch (error) {
     console.error("Error creating response:", error);
     throw error;
@@ -206,7 +258,20 @@ export const getQuestionsByHashtag = async (hashtagName) => {
       }
     }
 
-    return await response.json();
+    // Manejar el caso de respuesta vacía
+    const responseText = await response.text();
+    if (!responseText || responseText.trim() === '') {
+      console.log(`No se encontraron preguntas para el hashtag ${hashtagName}`);
+      return [];
+    }
+    
+    try {
+      // Intentar parsear la respuesta como JSON
+      return JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(`Error al parsear respuesta JSON para hashtag ${hashtagName}:`, parseError);
+      return [];
+    }
   } catch (error) {
     console.error(`Error fetching questions with hashtag ${hashtagName}:`, error);
     throw error;
