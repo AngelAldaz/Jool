@@ -14,11 +14,11 @@ export default function FilterButtons() {
   };
 
   return (
-    <div className="py-2 px-2 rounded-full bg-primary flex w-fit gap-2">
+    <div className="py-2 px-2 rounded-full bg-primary flex w-full md:w-fit gap-2 justify-center">
       {filterOptions.map((filter) => (
         <button
           key={filter}
-          className={`hover:cursor-pointer py-1 px-3 rounded-full font-bold transition-all duration-200 ${
+          className={`hover:cursor-pointer py-1 px-3 rounded-full font-bold transition-all duration-200 text-xs sm:text-sm md:text-base ${
             activeFilter === filter
               ? "bg-background text-text shadow-xl" // Sombra mejorada para botón activo
               : "bg-primary text-white shadow hover:shadow-lg" // Sombra sutil para inactivos con hover
