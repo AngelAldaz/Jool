@@ -1,8 +1,22 @@
+"use client";
 import SearchBar from "./SearchBar";
 import UserButton from "./UserButton";
 import FilterButtons from "./FilterButtons";
 import Link from "next/link";
-export default function NavBar() {
+
+export default function NavBar({ onFilterChange, onSearch }) {
+  const handleFilterChange = (filter) => {
+    if (onFilterChange) {
+      onFilterChange(filter);
+    }
+  };
+
+  const handleSearch = (query) => {
+    if (onSearch) {
+      onSearch(query);
+    }
+  };
+
   return (
     <section className="flex flex-col gap-2 w-4/5 md:w-fit mx-auto">
       <Link href="/">
@@ -19,10 +33,10 @@ export default function NavBar() {
         <div className="md:block hidden">
           <UserButton />
         </div>
-        <SearchBar />
+        <SearchBar onSearch={handleSearch} />
       </nav>
       <div className="flex justify-end">
-        <FilterButtons />
+        <FilterButtons onFilterChange={handleFilterChange} />
       </div>
     </section>
   );

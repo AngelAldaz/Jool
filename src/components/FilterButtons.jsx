@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-export default function FilterButtons() {
+export default function FilterButtons({ onFilterChange }) {
   // Estado para rastrear qué filtro está seleccionado actualmente
   const [activeFilter, setActiveFilter] = useState("Nuevo");
 
@@ -11,6 +11,11 @@ export default function FilterButtons() {
   // Función para manejar el clic en los botones
   const handleFilterClick = (filter) => {
     setActiveFilter(filter);
+    
+    // Si se proporcionó una función de cambio de filtro, llamarla con el filtro seleccionado
+    if (onFilterChange) {
+      onFilterChange(filter);
+    }
   };
 
   return (
