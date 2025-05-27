@@ -81,10 +81,16 @@ export default function PostCard() {
             </>
           )}
         </div>
-        <h1 className="text-2xl font-semibold max-w-4xl text-text">
+        {/* <h1 className="text-2xl font-semibold max-w-4xl text-text">
           Trouble shooting when using picam2.capture_array to take picture and
           put them into RAM
-        </h1>
+        </h1> */}
+        <section className="bg-background rounded-xl p-5">
+          <h1 className="text-xl md:text-2xl font-semibold text-text break-words">
+            Trouble shooting when using picam2.capture_array to take picture and
+            put them into RAM
+          </h1>
+        </section>
         <div className="flex gap-1 items-center">
           {/* Versión desktop - visible en pantallas medianas y grandes */}
           <div className="hidden md:flex gap-1 items-center">
@@ -143,8 +149,12 @@ export default function PostCard() {
         <HashTag>python</HashTag>
         <HashTag>raspberry-pi</HashTag>
       </section>
-      <section className=" mt-2">
+      <section className=" mt-2 flex justify-between items-center">
         <p className="text-primary font-light">Hace 6 días</p>
+        {/* <p className="text-primary font-light">Comentarios: 30</p> */}
+        <a href="/question">
+          <Image src="/goto_link.svg" alt="Views" width={30} height={30} />
+        </a>
       </section>
     </div>
   );
