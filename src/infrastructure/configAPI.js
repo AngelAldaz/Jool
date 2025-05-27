@@ -20,6 +20,13 @@ const endpoints = {
     delete: (id) => `${BASE_URL}/Questions/${id}`,
     getByUserId: (userId) => `${BASE_URL}/Questions/user/${userId}`,
     getByHashtag: (hashtagName) => `${BASE_URL}/Questions/hashtag/${hashtagName}`
+  },
+  responses: {
+    getAll: `${BASE_URL}/Responses`,
+    create: `${BASE_URL}/Responses`,
+    getById: (id) => `${BASE_URL}/Responses/${id}`,
+    update: (id) => `${BASE_URL}/Responses/${id}`,
+    delete: (id) => `${BASE_URL}/Responses/${id}`
   }
 };
 

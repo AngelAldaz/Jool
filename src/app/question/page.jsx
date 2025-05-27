@@ -1,74 +1,83 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import QuestionHeading from "@/components/QuestionHeading";
 import ReturnButton from "@/components/ReturnButton";
 import StickyInteractions from "@/components/StickyInteractions";
 import ReactMarkdown from "react-markdown";
 import Answer from "@/components/Answer";
-import { useState } from "react";
 import MDEditor from "@uiw/react-md-editor";
-export default function Home() {
+import { getQuestionById, createResponse } from "@/infrastructure/questionService";
+import { isLoggedIn, getCurrentUser } from "@/infrastructure/authService";
+
+export default function QuestionDetail() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const questionId = searchParams.get("id");
+  
+  // Estados para la pregunta y carga
+  const [question, setQuestion] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   // Estado para el formulario de nueva respuesta
   const [newResponse, setNewResponse] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
 
-  let title =
-    "Trouble shooting when using picam2.capture_array to take picture and put them into RAM";
-  let content =
-    "I am using my raspberry pi to try to complete the task, which is taking a picture in, then use the function get_angle to find the angle of reference of the blue dots in the picture. Then, turing the survo motor to aim the angle. However when I run my program I got this error: You can see how I add a 'imshow' in the while loop and a 'print('no center of mass found')' in the function get_angle. I would expect the picture to show up for a second and the screen printing the message of 'no center of mass found' cause I just take a picture of the walls and there are no blue dots in the picture. Strange enough, it does not print out anything, and no pictures shows up. Also, it does not automatically end for after 10s. I am using my raspberry pi to try to complete the task, which is taking a picture in, then use the function get_angle to find the angle of reference of the blue dots in the picture. Then, turing the survo motor to aim the angle. However when I run my program I got this error: You can see how I add a 'imshow' in the while loop and a 'print('no center of mass found')' in the function get_angle. I would expect the picture to show up for a second and the screen printing the message of 'no center of mass found' cause I just take a picture of the walls and there are no blue dots in the picture. Strange enough, it does not print out anything, and no pictures shows up. Also, it does not automatically end for after 10s. I am using my raspberry pi to try to complete the task, which is taking a picture in, then use the function get_angle to find the angle of reference of the blue dots in the picture. Then, turing the survo motor to aim the angle. However when I run my program I got this error: You can see how I add a 'imshow' in the while loop and a 'print('no center of mass found')' in the function get_angle. I would expect the picture to show up for a second and the screen printing the message of 'no center of mass found' cause I just take a picture of the walls and there are no blue dots in the picture. Strange enough, it does not print out anything, and no pictures shows up. Also, it does not automatically end for after 10s. I am using my raspberry pi to try to complete the task, which is taking a picture in, then use the function get_angle to find the angle of reference of the blue dots in the picture. Then, turing the survo motor to aim the angle. However when I run my program I got this error: You can see how I add a 'imshow' in the while loop and a 'print('no center of mass found')' in the function get_angle. I would expect the picture to show up for a second and the screen printing the message of 'no center of mass found' cause I just take a picture of the walls and there are no blue dots in the picture. Strange enough, it does not print out anything, and no pictures shows up. Also, it does not automatically end for after 10s.";
-  let user = "John Doe";
-  let userImage = "https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg";
-  let time = "Hace 6 días";
-  let views = 325;
-  let responses = 30;
-  let stars = 200;
-  let markdownContent = `
-### 🔍 **1. El programa no imprime ni muestra nada**
-Esto sugiere que tal vez el programa nunca llega a ejecutar las líneas dentro del \`while\` o dentro de la función \`get_angle\`.
+  // Cargar la pregunta cuando se monta el componente
+  useEffect(() => {
+    // Verificar si el usuario está autenticado
+    if (!isLoggedIn()) {
+      router.push("/login");
+      return;
+    }
 
-- Asegúrate de que **sí estás llamando a la función \`get_angle\`** y que el código dentro del ciclo \`while\` realmente se ejecuta.
-- Agrega un \`print("Iniciando bucle...")\` justo antes del \`while\` para confirmar si se está ejecutando.
+    // Verificar si hay un ID de pregunta
+    if (!questionId) {
+      router.push("/");
+      return;
+    }
 
----
+    fetchQuestionDetails();
+  }, [questionId, router]);
 
-### 🧪 **2. \`imshow\` no muestra la imagen**
-\`cv2.imshow()\` necesita un entorno gráfico (GUI). **En Raspberry Pi, si estás corriendo tu script desde terminal sin escritorio gráfico (como SSH), no funcionará.**
+  // Función para obtener los detalles de la pregunta
+  const fetchQuestionDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await getQuestionById(questionId);
+      console.log("Pregunta cargada:", data);
+      setQuestion(data);
+    } catch (error) {
+      console.error("Error fetching question:", error);
+      setError(error.message || "Error al cargar la pregunta");
+      // Si hay un error de autenticación, redireccionar al login
+      if (error.message.includes("Authentication") || error.message.includes("401")) {
+        router.push("/login");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-**Solución:**
-- Asegúrate de ejecutar tu script desde un entorno con GUI (como el escritorio de Raspbian o usando VNC).
-- Alternativamente, guarda la imagen con \`cv2.imwrite("output.jpg", image)\` para verificar que se capturó correctamente.
-
----
-
-### ⏱ **3. El programa no termina tras 10 segundos**
-Puede que estés usando un \`while True:\` sin control de tiempo.
-
-**Solución:**
-Asegúrate de usar una condición como esta:
-\`\`\`python
-import time
-start = time.time()
-while time.time() - start < 10:
-    # tu código aquí
-\`\`\`
-
----
-
-### 🔧 **4. \`get_angle\` no imprime**
-Asegúrate de que la condición que evalúa si se encontró o no el centro de masa **realmente se cumple**. Si estás usando detección por color:
-
-- Revisa si estás aplicando correctamente los umbrales del color azul.
-- Puedes imprimir el resultado de la máscara (\`cv2.countNonZero(mask)\`) para saber si está detectando algo o no.
-
----
-
-### 🛠 Recomendaciones adicionales
-- Usa \`try/except\` para capturar errores que estén interrumpiendo tu programa.
-- Usa \`cv2.waitKey(1000)\` después de \`imshow()\` para dar tiempo a que se muestre.
-- Usa \`print()\` dentro de cada parte crítica para verificar flujo.
-`;
+  // Formatear fecha a formato legible
+  const formatDate = (dateString) => {
+    if (!dateString) return "Hace un momento";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Hoy";
+    if (diffDays === 1) return "Ayer";
+    if (diffDays < 7) return `Hace ${diffDays} días`;
+    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+    if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`;
+    return `Hace ${Math.floor(diffDays / 365)} años`;
+  };
 
   // Función para manejar el envío de la nueva respuesta
   const handleSubmitResponse = async (e) => {
@@ -81,89 +90,156 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
 
     setIsSubmitting(true);
     setSubmitMessage("");
-    setSubmitMessage("¡Respuesta enviada correctamente!");
-    setNewResponse(""); // Limpiar el formulario
-    setIsSubmitting(false);
 
-    // try {
-    //   // Aquí haces el POST a tu API
-    //   const response = await fetch("/api/responses", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       content: newResponse,
-    //       questionId: "question-id", // Reemplaza con el ID real de la pregunta
-    //       userId: "current-user-id", // Reemplaza con el ID del usuario actual
-    //     }),
-    //   });
-
-    //   if (response.ok) {
-    //     setSubmitMessage("¡Respuesta enviada correctamente!");
-    //     setNewResponse(""); // Limpiar el formulario
-    //   } else {
-    //     throw new Error("Error al enviar la respuesta");
-    //   }
-    // } catch (error) {
-    //   console.error("Error:", error);
-    //   setSubmitMessage("Error al enviar la respuesta. Inténtalo de nuevo.");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
+    try {
+      const currentUser = getCurrentUser();
+      
+      if (!currentUser || !currentUser.user_id) {
+        throw new Error("Usuario no autenticado");
+      }
+      
+      // Crear objeto de respuesta
+      const responseData = {
+        content: newResponse,
+        question_id: parseInt(questionId),
+        user_id: currentUser.user_id
+      };
+      
+      console.log("Enviando respuesta:", responseData);
+      
+      // Enviar respuesta al servidor
+      const createdResponse = await createResponse(responseData);
+      console.log("Respuesta creada:", createdResponse);
+      
+      setSubmitMessage("¡Respuesta enviada correctamente!");
+      setNewResponse(""); // Limpiar el formulario
+      
+      // Actualizar la pregunta para mostrar la nueva respuesta
+      await fetchQuestionDetails();
+    } catch (error) {
+      console.error("Error al crear respuesta:", error);
+      setSubmitMessage(`Error al enviar la respuesta: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Mostrar un mensaje de carga mientras se obtiene la pregunta
+  if (loading) {
+    return (
+      <>
+        <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
+          <ReturnButton />
+          <div className="flex justify-center items-center min-h-[200px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  // Mostrar un mensaje de error si ocurrió algún problema
+  if (error) {
+    return (
+      <>
+        <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
+          <ReturnButton />
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            {error}
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  // Mostrar un mensaje si no se encuentra la pregunta
+  if (!question) {
+    return (
+      <>
+        <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
+          <ReturnButton />
+          <div className="text-center py-10">
+            <h3 className="text-xl font-medium text-gray-600">Pregunta no encontrada</h3>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
-      <main className=" flex-1 space-y-6 mt-5 w-4/5 mx-auto">
+      <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
         <ReturnButton />
-        <div className="relative space-y-6 ">
+        <div className="relative space-y-6">
           <StickyInteractions
-            views={views}
-            responses={responses}
-            stars={stars}
+            views={question.views || 0}
+            responses={question.response_count || 0}
+            stars={question.views || 0} // Usar views como stars por ahora
             liked={false}
           />
-          <section className="rounded-4xl p-6 md:p-8 bg-white  shadow-card flex flex-col gap-4 ">
-            <QuestionHeading user={user} userImage={userImage} time={time} />
+          <section className="rounded-4xl p-6 md:p-8 bg-white shadow-card flex flex-col gap-4">
+            <QuestionHeading 
+              user={question.user_name || "Usuario"} 
+              userImage={"https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg"} // Imagen por defecto
+              time={formatDate(question.date)} 
+            />
             <section className="bg-background rounded-xl p-5">
               <h1 className="text-xl md:text-2xl font-bold text-text break-words">
-                {title}
+                {question.title}
               </h1>
             </section>
             <div className="flex flex-col gap-4">
-              <ReactMarkdown>{content}</ReactMarkdown>
+              <ReactMarkdown>{question.content}</ReactMarkdown>
             </div>
           </section>
         </div>
-        <h1 className="text-xl md:text-2xl font-bold" id="answers">
-          Best Answer
-        </h1>
-        <Answer
-          userImage={userImage}
-          user={user}
-          time={time}
-          stars={stars}
-          markdownContent={markdownContent}
-          correct={true}
-        />
-        <h1 className="text-xl md:text-2xl font-bold">{responses} Responses</h1>
-        <Answer
-          userImage={userImage}
-          user={user}
-          time={time}
-          stars={stars}
-          markdownContent={markdownContent}
-          correct={false}
-        />
-        <Answer
-          userImage={userImage}
-          user={user}
-          time={time}
-          stars={stars}
-          markdownContent={markdownContent}
-          correct={false}
-        />
+
+        {/* Respuestas */}
+        {question.responses && question.responses.length > 0 && (
+          <>
+            {/* Mostrar la respuesta más reciente como "Mejor Respuesta" */}
+            <h1 className="text-xl md:text-2xl font-bold" id="answers">
+              Mejor Respuesta
+            </h1>
+            {/* Ordenar por fecha (más reciente primero) y mostrar solo la primera */}
+            {[...question.responses]
+              .sort((a, b) => new Date(b.date) - new Date(a.date))
+              .slice(0, 1)
+              .map((response) => (
+                <Answer
+                  key={response.response_id}
+                  userImage={"https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg"}
+                  user={response.user_name || "Usuario"}
+                  time={formatDate(response.date)}
+                  stars={response.likes || 0}
+                  markdownContent={response.content}
+                  correct={true}
+                />
+              ))}
+
+            {/* Mostrar todas las respuestas */}
+            <h1 className="text-xl md:text-2xl font-bold">
+              {question.response_count || 0} Respuestas
+            </h1>
+            {/* Ordenar por número de likes (más likes primero) */}
+            {[...question.responses]
+              .sort((a, b) => b.likes - a.likes)
+              .map((response) => (
+                <Answer
+                  key={response.response_id}
+                  userImage={"https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg"}
+                  user={response.user_name || "Usuario"}
+                  time={formatDate(response.date)}
+                  stars={response.likes || 0}
+                  markdownContent={response.content}
+                  correct={false}
+                />
+              ))}
+          </>
+        )}
 
         {/* Formulario para nueva respuesta */}
         <section className="rounded-4xl p-6 md:p-8 bg-white shadow-sm">
@@ -178,18 +254,6 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
               </label>
               <MDEditor value={newResponse} onChange={setNewResponse} />
             </div>
-
-            {/* Vista previa del markdown
-            {newResponse && (
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Vista previa:
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg ">
-                  <ReactMarkdown>{newResponse}</ReactMarkdown>
-                </div>
-              </div>
-            )} */}
 
             <div className="flex items-center justify-between">
               <button

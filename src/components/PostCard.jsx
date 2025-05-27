@@ -2,10 +2,12 @@
 import Image from "next/image";
 import HashTag from "./Hashtag";
 import { useState } from "react";
-export default function PostCard() {
+import Link from "next/link";
+
+export default function PostCard({ question }) {
   const [isStarHovered, setIsStarHovered] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
-  const [starCount, setStarCount] = useState(200);
+  const [starCount, setStarCount] = useState(question?.views || 0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Función para manejar el click en estrella
@@ -14,15 +16,36 @@ export default function PostCard() {
     setStarCount(isLiked ? starCount - 1 : starCount + 1);
     setIsLiked(!isLiked);
   };
+
+  // Format date to a readable string
+  const formatDate = (dateString) => {
+    if (!dateString) return "Hace un momento";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Hoy";
+    if (diffDays === 1) return "Ayer";
+    if (diffDays < 7) return `Hace ${diffDays} días`;
+    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+    if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`;
+    return `Hace ${Math.floor(diffDays / 365)} años`;
+  };
+
+  if (!question) {
+    return null; // Don't render if no question data
+  }
+
   return (
-    <div className="rounded-4xl p-6 bg-white  shadow-card">
+    <div className="rounded-4xl p-6 bg-white shadow-card">
       <section className="flex flex-col md:flex-row justify-between">
         {/* Versión móvil - dropdown con tres puntos */}
         <div className="md:hidden relative ml-auto">
           {/* Alinear boton a la derecha */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-10 h-10 rounded-lg hover:bg-gray-50 transition-colors   "
+            className="w-10 h-10 rounded-lg hover:bg-gray-50 transition-colors"
             aria-label="Más opciones"
           >
             <Image src="/drop-down.svg" alt="Stars" width={30} height={30} />
@@ -42,7 +65,7 @@ export default function PostCard() {
                 {/* Views */}
                 <div className="flex items-center gap-3 px-4 py-3 text-sm">
                   <Image src="/views.svg" alt="Views" width={20} height={20} />
-                  <span className="font-medium">325 views</span>
+                  <span className="font-medium">{question.views || 0} views</span>
                 </div>
 
                 {/* Responses */}
@@ -57,7 +80,7 @@ export default function PostCard() {
                     width={20}
                     height={20}
                   />
-                  <span className="font-medium">30 responses</span>
+                  <span className="font-medium">{question.response_count || 0} responses</span>
                 </a>
 
                 {/* Stars */}
@@ -81,14 +104,9 @@ export default function PostCard() {
             </>
           )}
         </div>
-        {/* <h1 className="text-2xl font-semibold max-w-4xl text-text">
-          Trouble shooting when using picam2.capture_array to take picture and
-          put them into RAM
-        </h1> */}
         <section className="bg-background rounded-xl p-5">
           <h1 className="text-xl md:text-2xl font-semibold text-text break-words">
-            Trouble shooting when using picam2.capture_array to take picture and
-            put them into RAM
+            {question.title}
           </h1>
         </section>
         <div className="flex gap-1 items-center">
@@ -97,7 +115,7 @@ export default function PostCard() {
             <div className="flex flex-col items-center gap-2 px-3 py-2 rounded-lg transition-colors">
               <Image src="/views.svg" alt="Views" width={30} height={30} />
               <span className="text-xs md:text-sm font-medium text-center">
-                325 views
+                {question.views || 0} views
               </span>
             </div>
             <a
@@ -111,7 +129,7 @@ export default function PostCard() {
                 height={30}
               />
               <span className="text-xs md:text-sm font-medium text-center">
-                30 responses
+                {question.response_count || 0} responses
               </span>
             </a>
             <a
@@ -137,24 +155,20 @@ export default function PostCard() {
         </div>
       </section>
       <section className="mt-1.5">
-        <p className="text-justify  font-light text-primary">
-          I am using my raspberry pi to try to complete the task, which is
-          taking a picture in, then use the function get_angle to find the angle
-          of reference of the blue dots in the picture. Then, turing the survo
-          motor to aim the angle. However when I run my program I got this
-          error:
+        <p className="text-justify font-light text-primary">
+          {question.content}
         </p>
       </section>
-      <section className="flex gap-2 mt-3">
-        <HashTag>python</HashTag>
-        <HashTag>raspberry-pi</HashTag>
+      <section className="flex gap-2 mt-3 flex-wrap">
+        {question.hashtags && question.hashtags.map((hashtag) => (
+          <HashTag key={hashtag.hashtag_id}>{hashtag.name}</HashTag>
+        ))}
       </section>
-      <section className=" mt-2 flex justify-between items-center">
-        <p className="text-primary font-light">Hace 6 días</p>
-        {/* <p className="text-primary font-light">Comentarios: 30</p> */}
-        <a href="/question">
+      <section className="mt-2 flex justify-between items-center">
+        <p className="text-primary font-light">{formatDate(question.date)}</p>
+        <Link href={`/question?id=${question.question_id}`}>
           <Image src="/goto_link.svg" alt="Views" width={30} height={30} />
-        </a>
+        </Link>
       </section>
     </div>
   );
