@@ -87,7 +87,9 @@ Asegúrate de que la condición que evalúa si se encontró o no el centro de ma
             </div>
           </section>
         </div>
-        <h1 className="text-xl md:text-2xl font-bold">Best Answer</h1>
+        <h1 className="text-xl md:text-2xl font-bold" id="answers">
+          Best Answer
+        </h1>
         <Answer
           userImage={userImage}
           user={user}
