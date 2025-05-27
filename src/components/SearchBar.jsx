@@ -23,8 +23,9 @@ export default function SearchBar() {
           <Image
             src="/search.svg"
             alt="Search"
-            layout="fill"
-            objectFit="contain"
+            width={20}
+            height={20}
+            // objectFit="contain"
             className="w-full h-full"
           />
         </div>
