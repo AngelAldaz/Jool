@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import QuestionHeading from "@/components/QuestionHeading";
@@ -16,6 +16,8 @@ export default function QuestionDetail() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const questionId = searchParams.get("id");
+  const isMounted = useRef(false);
+  const dataFetchedRef = useRef(false);
   
   // Estados para la pregunta y carga
   const [question, setQuestion] = useState(null);
@@ -29,8 +31,34 @@ export default function QuestionDetail() {
   
   // Estado para eliminar respuestas
   const [deletingResponse, setDeletingResponse] = useState(false);
-  // Estado para el contador de ejecuciones
-  const [fetchCount, setFetchCount] = useState(0);
+
+  // Función para obtener los detalles de la pregunta
+  const fetchQuestionDetails = async (forceRefresh = false) => {
+    // Evitar doble ejecución en el montado inicial
+    if (!forceRefresh && dataFetchedRef.current) {
+      console.log('Evitando fetch duplicado');
+      return;
+    }
+    
+    console.log(`Ejecutando fetchQuestionDetails - ${new Date().toISOString()}`);
+    
+    try {
+      setLoading(true);
+      const data = await getQuestionById(questionId);
+      console.log("Pregunta cargada:", data);
+      setQuestion(data);
+      dataFetchedRef.current = true;
+    } catch (error) {
+      console.error("Error fetching question:", error);
+      setError(error.message || "Error al cargar la pregunta");
+      // Si hay un error de autenticación, redireccionar al login
+      if (error.message.includes("Authentication") || error.message.includes("401")) {
+        router.push("/login");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Cargar la pregunta cuando se monta el componente
   useEffect(() => {
@@ -46,34 +74,25 @@ export default function QuestionDetail() {
       return;
     }
 
-    fetchQuestionDetails();
+    if (!isMounted.current) {
+      // Primera vez que se monta
+      isMounted.current = true;
+      fetchQuestionDetails();
+    } else if (dataFetchedRef.current) {
+      // Si cambia el questionId después de ya haber cargado datos
+      dataFetchedRef.current = false;
+      fetchQuestionDetails();
+    }
+    
+    // Cleanup function
+    return () => {
+      // Si el componente se desmonta, resetear el estado de fetch para futuros montajes
+      if (!isMounted.current) {
+        dataFetchedRef.current = false;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionId]);
-
-  // Función para obtener los detalles de la pregunta
-  const fetchQuestionDetails = async () => {
-    setFetchCount(prev => {
-      const newCount = prev + 1;
-      console.log(`Ejecutando fetchQuestionDetails - #${newCount}`, new Date().toISOString());
-      return newCount;
-    });
-    
-    try {
-      setLoading(true);
-      const data = await getQuestionById(questionId);
-      console.log("Pregunta cargada:", data);
-      setQuestion(data);
-    } catch (error) {
-      console.error("Error fetching question:", error);
-      setError(error.message || "Error al cargar la pregunta");
-      // Si hay un error de autenticación, redireccionar al login
-      if (error.message.includes("Authentication") || error.message.includes("401")) {
-        router.push("/login");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Formatear fecha a formato legible
   const formatDate = (dateString) => {
@@ -127,7 +146,8 @@ export default function QuestionDetail() {
       setNewResponse(""); // Limpiar el formulario
       
       // Actualizar la pregunta para mostrar la nueva respuesta
-      await fetchQuestionDetails();
+      // Aquí usamos forceRefresh=true para asegurar que se obtienen los datos actualizados
+      await fetchQuestionDetails(true);
     } catch (error) {
       console.error("Error al crear respuesta:", error);
       setSubmitMessage(`Error al enviar la respuesta: ${error.message}`);
@@ -144,7 +164,8 @@ export default function QuestionDetail() {
       setDeletingResponse(true);
       await deleteResponse(responseId);
       // Actualizar la pregunta para reflejar los cambios
-      await fetchQuestionDetails();
+      // Usar forceRefresh=true para asegurar que se obtienen los datos actualizados
+      await fetchQuestionDetails(true);
       return true;
     } catch (error) {
       console.error("Error al eliminar respuesta:", error);
