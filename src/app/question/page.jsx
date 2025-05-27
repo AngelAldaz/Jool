@@ -9,7 +9,7 @@ import StickyInteractions from "@/components/StickyInteractions";
 import ReactMarkdown from "react-markdown";
 import Answer from "@/components/Answer";
 import MDEditor from "@uiw/react-md-editor";
-import { getQuestionById, createResponse } from "@/infrastructure/questionService";
+import { getQuestionById, createResponse, deleteResponse } from "@/infrastructure/questionService";
 import { isLoggedIn, getCurrentUser } from "@/infrastructure/authService";
 
 export default function QuestionDetail() {
@@ -26,6 +26,9 @@ export default function QuestionDetail() {
   const [newResponse, setNewResponse] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  
+  // Estado para eliminar respuestas
+  const [deletingResponse, setDeletingResponse] = useState(false);
 
   // Cargar la pregunta cuando se monta el componente
   useEffect(() => {
@@ -123,6 +126,24 @@ export default function QuestionDetail() {
       setIsSubmitting(false);
     }
   };
+  
+  // Función para manejar la eliminación de respuestas
+  const handleDeleteResponse = async (responseId) => {
+    if (!responseId) return;
+    
+    try {
+      setDeletingResponse(true);
+      await deleteResponse(responseId);
+      // Actualizar la pregunta para reflejar los cambios
+      await fetchQuestionDetails();
+      return true;
+    } catch (error) {
+      console.error("Error al eliminar respuesta:", error);
+      return false;
+    } finally {
+      setDeletingResponse(false);
+    }
+  };
 
   // Mostrar un mensaje de carga mientras se obtiene la pregunta
   if (loading) {
@@ -211,12 +232,15 @@ export default function QuestionDetail() {
               .map((response) => (
                 <Answer
                   key={response.response_id}
+                  responseId={response.response_id}
+                  userId={response.user_id}
                   userImage={"https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg"}
                   user={response.user_name || "Usuario"}
                   time={formatDate(response.date)}
                   stars={response.likes || 0}
                   markdownContent={response.content}
                   correct={true}
+                  onDelete={handleDeleteResponse}
                 />
               ))}
 
@@ -230,12 +254,15 @@ export default function QuestionDetail() {
               .map((response) => (
                 <Answer
                   key={response.response_id}
+                  responseId={response.response_id}
+                  userId={response.user_id}
                   userImage={"https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg"}
                   user={response.user_name || "Usuario"}
                   time={formatDate(response.date)}
                   stars={response.likes || 0}
                   markdownContent={response.content}
                   correct={false}
+                  onDelete={handleDeleteResponse}
                 />
               ))}
           </>

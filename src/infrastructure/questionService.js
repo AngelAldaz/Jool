@@ -160,6 +160,47 @@ export const createResponse = async (responseData) => {
 };
 
 /**
+ * Deletes a response by ID
+ * @param {number} responseId - The ID of the response to delete
+ * @returns {Promise<void>}
+ */
+export const deleteResponse = async (responseId) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
+    console.log("Deleting response with ID:", responseId);
+
+    const response = await fetch(endpoints.responses.delete(responseId), {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response from server:", errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.detail || `Error deleting response: ${response.status}`);
+      } catch (parseError) {
+        throw new Error(errorText || `Error deleting response: ${response.statusText}`);
+      }
+    }
+
+    console.log("Response deleted successfully");
+    return;
+  } catch (error) {
+    console.error("Error deleting response:", error);
+    throw error;
+  }
+};
+
+/**
  * Gets questions by a specific hashtag
  * @param {string} hashtagName - Hashtag name
  * @returns {Promise<Array>} Array of question objects
@@ -238,6 +279,7 @@ export default {
   getQuestionById,
   createQuestion,
   createResponse,
+  deleteResponse,
   getQuestionsByHashtag,
   getQuestionsByUser
 }; 
