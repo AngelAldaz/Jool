@@ -1,14 +1,19 @@
 "use client";
 import { useState } from "react";
 import Footer from "@/components/Footer";
+import { useRouter } from "next/navigation";
+import { loginUser } from "@/infrastructure/authService";
 
 export default function LogIn() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     remember: false,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const togglePassword = () => {
     setShowPassword(!showPassword);
@@ -22,11 +27,20 @@ export default function LogIn() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login attempt:", formData);
-    // Aquí irían las validaciones y el envío del formulario
-    alert("¡Bienvenido a JOOL!");
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      await loginUser(formData.email, formData.password);
+      // Redirect to home page on successful login
+      router.push("/");
+    } catch (error) {
+      setError(error.message || "Error al iniciar sesión. Intente nuevamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,6 +61,12 @@ export default function LogIn() {
             {/* </div> */}
 
             <div className=" space-y-6">
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                  {error}
+                </div>
+              )}
+              
               <div className="space-y-4">
                 <div>
                   <label
@@ -128,9 +148,10 @@ export default function LogIn() {
                 <button
                   type="submit"
                   onClick={handleSubmit}
-                  className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg"
+                  disabled={isLoading}
+                  className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70"
                 >
-                  Iniciar Sesión
+                  {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </button>
               </div>
 
