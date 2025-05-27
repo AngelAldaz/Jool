@@ -1,5 +1,5 @@
 import endpoints from "./configAPI";
-import { authHeader } from "./authService";
+import { createAuthHeaders, isAuthenticated } from "./storageService";
 
 /**
  * Fetches all questions from the API
@@ -7,17 +7,13 @@ import { authHeader } from "./authService";
  */
 export const getAllQuestions = async () => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getAll, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: createAuthHeaders()
     });
 
     if (!response.ok) {
@@ -46,17 +42,13 @@ export const getAllQuestions = async () => {
  */
 export const getQuestionById = async (id) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getById(id), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: createAuthHeaders()
     });
 
     if (!response.ok) {
@@ -85,17 +77,13 @@ export const getQuestionById = async (id) => {
  */
 export const createQuestion = async (questionData) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.create, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
+      headers: createAuthHeaders(),
       body: JSON.stringify(questionData)
     });
 
@@ -123,8 +111,7 @@ export const createQuestion = async (questionData) => {
  */
 export const createResponse = async (responseData) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
@@ -132,10 +119,7 @@ export const createResponse = async (responseData) => {
 
     const response = await fetch(endpoints.responses.create, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
+      headers: createAuthHeaders(),
       body: JSON.stringify(responseData)
     });
 
@@ -166,8 +150,7 @@ export const createResponse = async (responseData) => {
  */
 export const deleteResponse = async (responseId) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
@@ -175,10 +158,7 @@ export const deleteResponse = async (responseId) => {
 
     const response = await fetch(endpoints.responses.delete(responseId), {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: createAuthHeaders()
     });
 
     if (!response.ok) {
@@ -207,17 +187,13 @@ export const deleteResponse = async (responseId) => {
  */
 export const getQuestionsByHashtag = async (hashtagName) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getByHashtag(hashtagName), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: createAuthHeaders()
     });
 
     if (!response.ok) {
@@ -244,17 +220,13 @@ export const getQuestionsByHashtag = async (hashtagName) => {
  */
 export const getQuestionsByUser = async (userId) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getByUserId(userId), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: createAuthHeaders()
     });
 
     if (!response.ok) {
@@ -294,8 +266,7 @@ export const getQuestionsByUser = async (userId) => {
  */
 export const deleteQuestion = async (questionId) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!isAuthenticated()) {
       throw new Error("Authentication required");
     }
 
@@ -303,10 +274,7 @@ export const deleteQuestion = async (questionId) => {
 
     const response = await fetch(endpoints.questions.delete(questionId), {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
+      headers: createAuthHeaders()
     });
 
     if (!response.ok) {

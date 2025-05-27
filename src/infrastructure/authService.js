@@ -1,4 +1,5 @@
 import endpoints from "./configAPI";
+import { setUser, clearUser, getUser, getToken, isAuthenticated } from "./storageService";
 
 /**
  * Attempts to login a user with the provided credentials
@@ -35,10 +36,9 @@ export const loginUser = async (email, password) => {
     // Parse the user data including token
     const userData = await response.json();
     
-    // Store user data and token in localStorage
+    // Store user data and token using storageService
     console.log(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", userData.token.accessToken);
+    setUser(userData);
     
     return userData;
   } catch (error) {
@@ -87,7 +87,7 @@ export const registerUser = async (userData) => {
  * @returns {boolean} - True if user is logged in
  */
 export const isLoggedIn = () => {
-  return !!localStorage.getItem("token");
+  return isAuthenticated();
 };
 
 /**
@@ -95,24 +95,22 @@ export const isLoggedIn = () => {
  * @returns {Object|null} - User data or null if not logged in
  */
 export const getCurrentUser = () => {
-  const userStr = localStorage.getItem("user");
-  return userStr ? JSON.parse(userStr) : null;
+  return getUser();
 };
 
 /**
  * Gets the current authentication token
  * @returns {string|null} - The auth token or null if not logged in
  */
-export const getToken = () => {
-  return localStorage.getItem("token");
+export const getAuthToken = () => {
+  return getToken();
 };
 
 /**
  * Logs out the current user
  */
 export const logout = () => {
-  localStorage.removeItem("user");
-  localStorage.removeItem("token");
+  clearUser();
 };
 
 /**
@@ -129,7 +127,7 @@ export default {
   registerUser,
   isLoggedIn,
   getCurrentUser,
-  getToken,
+  getAuthToken,
   logout,
   authHeader
 }; 

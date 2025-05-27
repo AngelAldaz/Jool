@@ -7,6 +7,7 @@ import ReturnButton from "@/components/ReturnButton";
 import MDEditor from "@uiw/react-md-editor";
 import { isLoggedIn, getCurrentUser } from "@/infrastructure/authService";
 import { createQuestion, getQuestionsByUser, deleteQuestion } from "@/infrastructure/questionService";
+import { getAllHashtags } from "@/infrastructure/hashtagService";
 
 export default function Profile() {
   const router = useRouter();
@@ -20,11 +21,17 @@ export default function Profile() {
   // Estados para el formulario de nueva pregunta
   const [newQuestion, setNewQuestion] = useState({
     title: "",
-    ontent: "",
-    hashtags: ""
+    content: "",
+    hashtags: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  
+  // Estados para el dropdown de hashtags
+  const [availableHashtags, setAvailableHashtags] = useState([]);
+  const [hashtagsLoading, setHashtagsLoading] = useState(false);
+  const [newHashtagInput, setNewHashtagInput] = useState("");
+  const [showHashtagDropdown, setShowHashtagDropdown] = useState(false);
   
   // Estados para eliminar preguntas
   const [deletingQuestion, setDeletingQuestion] = useState(false);
@@ -67,6 +74,25 @@ export default function Profile() {
     loadUserData();
   }, [router]);
 
+  // Cargar hashtags disponibles al montar el componente
+  useEffect(() => {
+    const fetchHashtags = async () => {
+      setHashtagsLoading(true);
+      try {
+        const hashtags = await getAllHashtags();
+        setAvailableHashtags(hashtags || []);
+      } catch (error) {
+        console.error("Error al cargar hashtags:", error);
+        // No mostrar error fatal, simplemente seguir con array vacío
+        setAvailableHashtags([]);
+      } finally {
+        setHashtagsLoading(false);
+      }
+    };
+
+    fetchHashtags();
+  }, []);
+
   // Función para manejar cambios en el título
   const handleTitleChange = (e) => {
     setNewQuestion(prev => ({
@@ -83,11 +109,23 @@ export default function Profile() {
     }));
   };
 
-  // Función para manejar cambios en los hashtags
-  const handleHashtagsChange = (e) => {
+  // Función para añadir un hashtag a la pregunta
+  const handleAddHashtag = (hashtagName) => {
+    // Verificar que no esté ya añadido
+    if (!newQuestion.hashtags.includes(hashtagName)) {
+      setNewQuestion(prev => ({
+        ...prev,
+        hashtags: [...prev.hashtags, hashtagName]
+      }));
+    }
+    setNewHashtagInput("");
+  };
+
+  // Función para remover un hashtag de la pregunta
+  const handleRemoveHashtag = (hashtagToRemove) => {
     setNewQuestion(prev => ({
       ...prev,
-      hashtags: e.target.value
+      hashtags: prev.hashtags.filter(tag => tag !== hashtagToRemove)
     }));
   };
 
@@ -104,18 +142,12 @@ export default function Profile() {
     setSubmitMessage("");
 
     try {
-      const hashtagList = newQuestion.hashtags
-        .split(",")
-        .map(tag => tag.trim())
-        .filter(tag => tag !== "")
-        .map(tag => ({ name: tag }));
-      
       // Crear objeto de pregunta
       const questionData = {
         title: newQuestion.title,
         content: newQuestion.content,
         user_id: user.user_id,
-        hashtags: hashtagList
+        hashtags: newQuestion.hashtags
       };
       
       console.log("Enviando pregunta:", questionData);
@@ -130,7 +162,7 @@ export default function Profile() {
       setNewQuestion({
         title: "",
         content: "",
-        hashtags: ""
+        hashtags: []
       });
       
       // Actualizar la lista de preguntas del usuario
@@ -296,16 +328,88 @@ export default function Profile() {
                 htmlFor="hashtags"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Hashtags (separados por comas)
+                Hashtags
               </label>
-              <input
-                type="text"
-                id="hashtags"
-                value={newQuestion.hashtags}
-                onChange={handleHashtagsChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="react, javascript, programación"
-              />
+              
+              {/* Hashtags seleccionados */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {newQuestion.hashtags.map(tag => (
+                  <div 
+                    key={tag} 
+                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
+                  >
+                    #{tag}
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveHashtag(tag)}
+                      className="ml-2 text-blue-600 hover:text-blue-800"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Dropdown para seleccionar hashtags */}
+              <div className="relative">
+                <div className="flex">
+                  <input
+                    type="text"
+                    id="hashtag-input"
+                    value={newHashtagInput}
+                    onChange={(e) => setNewHashtagInput(e.target.value)}
+                    onFocus={() => setShowHashtagDropdown(true)}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Buscar o escribir hashtag"
+                  />
+                </div>
+                
+                {showHashtagDropdown && newHashtagInput.trim() && (
+                  <div 
+                    className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg max-h-60 overflow-y-auto"
+                    onBlur={() => setShowHashtagDropdown(false)}
+                  >
+                    {hashtagsLoading ? (
+                      <div className="flex justify-center items-center p-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : (
+                      <ul>
+                        {availableHashtags
+                          .filter(tag => tag.name.toLowerCase().includes(newHashtagInput.toLowerCase()))
+                          .map(tag => (
+                            <li 
+                              key={tag.hashtag_id}
+                              onClick={() => {
+                                handleAddHashtag(tag.name);
+                                setShowHashtagDropdown(false);
+                              }}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                            >
+                              #{tag.name} <span className="text-gray-500 text-sm">({tag.used_count} usos)</span>
+                            </li>
+                          ))}
+                        
+                        {!availableHashtags.some(tag => 
+                            tag.name.toLowerCase() === newHashtagInput.toLowerCase()
+                          ) && (
+                          <li 
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-t border-gray-200"
+                            onClick={() => {
+                              handleAddHashtag(newHashtagInput);
+                              setShowHashtagDropdown(false);
+                            }}
+                          >
+                            Usar: <span className="font-bold">#{newHashtagInput}</span>
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -383,10 +487,10 @@ export default function Profile() {
                     <div className="flex space-x-2">
                       {question.hashtags && question.hashtags.map(tag => (
                         <span 
-                          key={tag.hashtag_id} 
+                          key={typeof tag === 'object' ? tag.hashtag_id : tag} 
                           className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-600"
                         >
-                          #{tag.name}
+                          #{typeof tag === 'object' ? tag.name : tag}
                         </span>
                       ))}
                     </div>
