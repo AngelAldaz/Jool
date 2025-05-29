@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/authService";
 import MicrosoftLoginButton from "@/components/auth/MicrosoftLoginButton";
 import { authService } from "@/services/authService";
+import { motion } from "framer-motion";
 
 export default function LogIn() {
   const router = useRouter();
@@ -54,150 +55,190 @@ export default function LogIn() {
     }
   };
 
+  // Variantes para animaciones
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { type: "spring", stiffness: 300, damping: 24 }
+    }
+  };
+
   return (
-    <>
-      <main className="flex-1 space-y-6 w-4/5 mx-auto align-center">
-        <div className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8 ">
-          <div className="max-w-md w-full space-y-2">
-            <a href="/">
-              <img src="/JOOL.svg" alt="Jool Logo" className="h-40 mx-auto" />
-            </a>
-            {/* <div className="text-center"> */}
-            {/* <h2 className="mt-6 text-3xl font-bold text-gray-900">
-                Bienvenid@!
-              </h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Inicia sesión en tu cuenta
-              </p> */}
-            {/* </div> */}
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <main className="flex-1 w-full max-w-md mx-auto py-12 px-4">
+        <motion.div 
+          className="w-full space-y-8"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={itemVariants} className="text-center">
+            <motion.a 
+              href="/"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <img 
+                src="/JOOL.svg" 
+                alt="Jool Logo" 
+                className="h-40 mx-auto drop-shadow-lg" 
+              />
+            </motion.a>
+            <motion.h2 
+              className="mt-6 text-3xl font-bold bg-gradient-to-r from-primary to-[#384a64] bg-clip-text text-transparent"
+              variants={itemVariants}
+            >
+              ¡Bienvenido de nuevo!
+            </motion.h2>
+            <motion.p 
+              className="mt-2 text-sm text-gray-600"
+              variants={itemVariants}
+            >
+              Inicia sesión para continuar en JOOL
+            </motion.p>
+          </motion.div>
 
-            <div className=" space-y-6">
-              {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                  >
-                    Correo electrónico
-                  </label>
+          <motion.div 
+            className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100"
+            variants={itemVariants}
+          >
+            {error && (
+              <motion.div 
+                className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center"
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              >
+                <svg className="w-5 h-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </motion.div>
+            )}
+            
+            <div className="space-y-6">
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                >
+                  Correo electrónico
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none text-base shadow-sm"
+                  placeholder="tu@ejemplo.com"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-bold text-gray-700 mb-2"
+                >
+                  Contraseña
+                </label>
+                <div className="relative">
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
                     required
-                    value={formData.email}
+                    value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 outline-none text-base"
-                    placeholder="tu@ejemplo.com"
+                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 outline-none text-base shadow-sm"
+                    placeholder="••••••••"
                   />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
+                  <button
+                    type="button"
+                    onClick={togglePassword}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
                   >
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 rounded-2xl bg-gray-50 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 outline-none text-base"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={togglePassword}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500 transition-colors"
-                    >
-                      {showPassword ? "🙈" : "👁️"}
-                    </button>
-                  </div>
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember"
-                    name="remember"
-                    type="checkbox"
-                    checked={formData.remember}
-                    onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300 rounded accent-blue-500"
-                  />
-                  <label
-                    htmlFor="remember"
-                    className="ml-2 block text-sm text-gray-700 font-medium"
-                  >
-                    Recordarme
-                  </label>
-                </div>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-semibold text-blue-500 hover:text-blue-600 transition-colors"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                </div>
-              </div> */}
-
-              {/* Login Button */}
-              <div>
-                <button
+              <div className="pt-2">
+                <motion.button
                   type="submit"
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-70"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent text-base font-bold rounded-xl text-white bg-gradient-to-r from-primary to-[#384a64] hover:from-[#1e2a3d] hover:to-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 disabled:opacity-70 shadow-md"
+                  whileHover={{ translateY: -2, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
-                </button>
-              </div>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">
-                    o continúa con
-                  </span>
-                </div>
-              </div>
-
-              <div className="">
-                <MicrosoftLoginButton />
-              </div>
-
-              <div className="text-center">
-                <p className="text-sm text-gray-600">
-                  ¿No tienes una cuenta?{" "}
-                  <a
-                    href="/register"
-                    className="font-semibold text-blue-500 hover:text-blue-600 transition-colors"
-                  >
-                    Regístrate
-                  </a>
-                </p>
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Iniciando sesión...
+                    </span>
+                  ) : "Iniciar Sesión"}
+                </motion.button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500 rounded-full shadow-sm">
+                o continúa con
+              </span>
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <MicrosoftLoginButton />
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="text-center">
+            <p className="text-sm text-gray-600">
+              ¿No tienes una cuenta?{" "}
+              <motion.a
+                href="/register"
+                className="font-semibold text-primary hover:text-[#1e2a3d] transition-colors"
+                whileHover={{ textDecoration: "underline" }}
+              >
+                Regístrate
+              </motion.a>
+            </p>
+          </motion.div>
+        </motion.div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

@@ -30,58 +30,20 @@ export default function PostCard({ question }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <section className="flex flex-col md:flex-row justify-between">
-        <section className="bg-background rounded-xl p-5 w-full md:w-3/5 transition-all duration-300 hover:shadow-inner">
-          <h1 className="text-xl md:text-2xl font-bold text-text break-words line-clamp-2 bg-gradient-to-r from-primary to-[#384a64] bg-clip-text text-transparent">
+      <div className="bg-background rounded-xl p-5 relative">
+        <div className="flex justify-between items-start">
+          <h1 className="text-xl md:text-2xl font-bold text-text pr-12 break-words bg-gradient-to-r from-primary to-[#384a64] bg-clip-text text-transparent">
             {question.title}
           </h1>
-        </section>
-        <div className="flex gap-1 items-center">
-          {/* Versión desktop - visible en pantallas medianas y grandes */}
-          <div className="hidden md:flex gap-1 items-center">
-            <div className="flex flex-col items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:bg-gray-100">
-              <Image src="/views.svg" alt="Views" width={30} height={30} className="drop-shadow" />
-              <span className="text-xs md:text-sm font-medium text-center">
-                {question.views || 0} views
-              </span>
-            </div>
-            <div
-              className="flex flex-col items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:bg-gray-100"
-            >
-              <Image
-                src="/comment.svg"
-                alt="Responses"
-                width={30}
-                height={30}
-                className="drop-shadow"
-              />
-              <span className="text-xs md:text-sm font-medium text-center">
-                {question.response_count || 0} responses
-              </span>
-            </div>
-            <a
-              href=""
-              className="flex flex-col items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-all duration-300"
-              onMouseEnter={() => setIsStarHovered(true)}
-              onMouseLeave={() => setIsStarHovered(false)}
-              onClick={handleStarClick}
-            >
-              <Image
-                src={
-                  isStarHovered || isLiked ? "/starFill.svg" : "/starNoFill.svg"
-                }
-                alt="Stars"
-                width={30}
-                height={30}
-                className={`${isLiked ? 'animate-pulse' : ''} drop-shadow`}
-              />
-              <span className="text-xs md:text-sm font-medium text-center">
-                {starCount} stars
-              </span>
-            </a>
+          
+          {/* Botón de más información en posición absoluta */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 md:block">
+            <Link href={`/question?id=${question.question_id}`} className="bg-primary rounded-full p-2 shadow-md hover:bg-[#1e2a3d] transition-colors transform hover:rotate-12 hover:scale-110 inline-block">
+              <Image src="/goto_link.svg" alt="Ver pregunta" width={24} height={24} className="filter brightness-0 invert" />
+            </Link>
           </div>
         </div>
-      </section>
+      </div>
       
       <section className="mt-4">
         <p className="text-justify font-light text-primary line-clamp-2 overflow-hidden">
@@ -99,7 +61,7 @@ export default function PostCard({ question }) {
         ))}
       </section>
       
-      {/* Información inferior: fecha, estadísticas móvil y enlace */}
+      {/* Información inferior: fecha, estadísticas ahora tanto en móvil como en desktop */}
       <section className="mt-5 pt-3 flex justify-between items-center border-t border-gray-200 bg-gradient-to-r from-transparent via-gray-100 to-transparent py-2 rounded-b-xl -mb-3 -mx-2 px-3">
         <p className="text-primary font-light">{getTimeAgo(question.date)}</p>
         
@@ -135,11 +97,46 @@ export default function PostCard({ question }) {
           </Link>
         </div>
         
-        {/* Versión desktop - Solo enlace para ver la pregunta */}
-        <div className="hidden md:block">
-          <Link href={`/question?id=${question.question_id}`} className="bg-primary rounded-full p-2 shadow-md hover:bg-[#1e2a3d] transition-colors transform hover:rotate-12 hover:scale-110 inline-block">
-            <Image src="/goto_link.svg" alt="Ver pregunta" width={24} height={24} className="filter brightness-0 invert" />
-          </Link>
+        {/* Versión desktop - Estadísticas ahora en la parte inferior */}
+        <div className="hidden md:flex gap-1 items-center">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1">
+            <Image src="/views.svg" alt="Views" width={20} height={20} className="drop-shadow" />
+            <span className="text-xs md:text-sm font-medium">
+              {question.views || 0} views
+            </span>
+          </div>
+          <div className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1">
+            <Image
+              src="/comment.svg"
+              alt="Responses"
+              width={20}
+              height={20}
+              className="drop-shadow"
+            />
+            <span className="text-xs md:text-sm font-medium">
+              {question.response_count || 0} responses
+            </span>
+          </div>
+          <a
+            href=""
+            className={`flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 ${isLiked ? 'bg-gray-200' : ''}`}
+            onMouseEnter={() => setIsStarHovered(true)}
+            onMouseLeave={() => setIsStarHovered(false)}
+            onClick={handleStarClick}
+          >
+            <Image
+              src={
+                isStarHovered || isLiked ? "/starFill.svg" : "/starNoFill.svg"
+              }
+              alt="Stars"
+              width={20}
+              height={20}
+              className={`${isLiked ? 'animate-pulse' : ''} drop-shadow`}
+            />
+            <span className="text-xs md:text-sm font-medium">
+              {starCount} stars
+            </span>
+          </a>
         </div>
       </section>
     </div>

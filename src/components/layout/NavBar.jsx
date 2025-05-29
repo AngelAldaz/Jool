@@ -42,12 +42,12 @@ export default function NavBar({ onFilterChange, onSearch }) {
       {/* Logo para móviles */}
       <div className="flex justify-between items-center md:hidden">
         <Link href="/" className="block">
-          <img
-            src="/JOOL.svg"
-            alt="Jool Logo"
+        <img
+          src="/JOOL.svg"
+          alt="Jool Logo"
             className="h-16 drop-shadow-md hover:drop-shadow-xl transition-all duration-300"
-          />
-        </Link>
+        />
+      </Link>
         <UserButton />
       </div>
       
@@ -56,7 +56,7 @@ export default function NavBar({ onFilterChange, onSearch }) {
         {/* Contenedor de búsqueda y usuario para escritorio */}
         <div className="flex items-center w-full">
           <div className="hidden md:flex items-center mr-4">
-            <UserButton />
+          <UserButton />
           </div>
           <div className="w-full transform hover:scale-[1.01] transition-transform duration-300">
             <SearchBar onSearch={handleSearch} />
@@ -81,7 +81,7 @@ export default function NavBar({ onFilterChange, onSearch }) {
           
           {/* Filtros */}
           <div className="flex transform hover:scale-[1.02] transition-transform duration-300">
-            <FilterButtons onFilterChange={handleFilterChange} />
+        <FilterButtons onFilterChange={handleFilterChange} />
           </div>
         </div>
       </div>

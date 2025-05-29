@@ -2,22 +2,26 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import AnswerInfo from "./AnswerInfo";
 import { getCurrentUser } from "@/services/authService";
 
 export default function Answer({
-  responseId,
-  userImage,
-  user,
-  time,
-  stars,
-  markdownContent,
-  correct,
-  userId,
-  onDelete
+  response,
+  formatDate,
+  onDelete,
+  isDeleting: parentIsDeleting
 }) {
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [localIsDeleting, setLocalIsDeleting] = useState(false);
+  
+  // Extraer datos de la respuesta
+  const responseId = response?.response_id;
+  const userId = response?.user_id;
+  const user = response?.user_name || "Usuario";
+  const userImage = response?.user_image || "https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg";
+  const time = formatDate ? formatDate(response?.date) : "";
+  const content = response?.content || "";
+  const isDeleting = parentIsDeleting || localIsDeleting;
+  const isBestAnswer = response?.is_best_answer || false;
   
   // Verificar si el usuario actual es el autor de la respuesta
   const currentUser = getCurrentUser();
@@ -28,13 +32,13 @@ export default function Answer({
   };
 
   const handleConfirmDelete = async () => {
-    setIsDeleting(true);
+    setLocalIsDeleting(true);
     try {
       await onDelete(responseId);
-      // No necesitamos hacer nada más aquí, la página se actualizará después de la eliminación
+      // La página se actualizará después de la eliminación exitosa
     } catch (error) {
       console.error("Error al eliminar respuesta:", error);
-      setIsDeleting(false);
+      setLocalIsDeleting(false);
       setShowConfirm(false);
     }
   };
@@ -44,58 +48,87 @@ export default function Answer({
   };
 
   return (
-    <section
-      className={`rounded-4xl p-6 md:p-8 ${
-        correct ? "bg-green-50 border-2 border-green-200" : "bg-white "
-      } shadow-sm flex flex-col md:flex-row gap-4 text-primary relative`}
-    >
-      <AnswerInfo
-        userImage={userImage}
-        user={user}
-        time={time}
-        stars={stars}
-        liked={false}
-      />
-      <div className="flex flex-col gap-4 break-all w-full">
-        <ReactMarkdown>{markdownContent}</ReactMarkdown>
+    <div className={`p-6 rounded-2xl shadow-md border relative overflow-hidden ${
+      isBestAnswer 
+        ? "bg-green-50 border-2 border-green-300" 
+        : "bg-white border-gray-100"
+    }`}>
+      <div className="flex items-start gap-4">
+        {/* Información del usuario y tiempo */}
+        <div className="flex-shrink-0">
+          <img
+            src={userImage}
+            alt={user}
+            width={48}
+            height={48}
+            className="rounded-full border-2 border-white shadow-sm"
+          />
+        </div>
         
-        {/* Solo mostrar el botón de eliminar si es el autor Y NO es la mejor respuesta */}
-        {isAuthor && !correct && (
-          <div className="absolute top-4 right-4">
-            {!showConfirm ? (
-              <button
-                onClick={handleDeleteClick}
-                className="bg-white hover:bg-gray-50 text-red-500 p-2 rounded-full shadow-sm hover:shadow transition-all"
-                title="Eliminar respuesta"
-                disabled={isDeleting}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <svg className="MuiSvgIcon-root" focusable="false" viewBox="0 0 24 24" aria-hidden="true" style={{ width: 20, height: 20 }}>
-                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
-                </svg>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 bg-white p-2 rounded shadow-md">
-                <span className="text-sm">¿Eliminar respuesta?</span>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 disabled:opacity-50"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? "Eliminando..." : "Sí"}
-                </button>
-                <button
-                  onClick={handleCancelDelete}
-                  className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400"
-                  disabled={isDeleting}
-                >
-                  No
-                </button>
-              </div>
-            )}
+        <div className="flex-grow min-w-0">
+          <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h3 className="font-bold text-gray-800 break-words">{user}</h3>
+              <p className="text-sm text-gray-500">{time}</p>
+            </div>
           </div>
-        )}
+          
+          {/* Mejor respuesta badge */}
+          {isBestAnswer && (
+            <div className="mb-3 inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+              <span>Mejor respuesta</span>
+            </div>
+          )}
+          
+          {/* Contenido de la respuesta */}
+          <div className="prose max-w-none prose-p:text-gray-700 prose-a:text-primary break-words overflow-hidden">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
+        </div>
       </div>
-    </section>
+      
+      {/* Botón de eliminar para el autor (no se muestra si es la mejor respuesta) */}
+      {isAuthor && !isBestAnswer && (
+        <div className="absolute top-4 right-4 z-10">
+          {!showConfirm ? (
+            <button
+              onClick={handleDeleteClick}
+              className="bg-white hover:bg-red-50 text-red-500 p-2 rounded-full shadow-sm hover:shadow transition-all"
+              title="Eliminar respuesta"
+              disabled={isDeleting}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-md border border-gray-100">
+              <span className="text-sm text-gray-700">¿Eliminar?</span>
+              <button
+                onClick={handleConfirmDelete}
+                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 disabled:opacity-50"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "..." : "Sí"}
+              </button>
+              <button
+                onClick={handleCancelDelete}
+                className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300"
+                disabled={isDeleting}
+              >
+                No
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
