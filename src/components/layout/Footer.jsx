@@ -1,7 +1,7 @@
 import { Instagram, Facebook, Globe } from "lucide-react";
 export default function Footer() {
   return (
-    <footer className="w-full px-25 py-4 bg-primary text-white flex justify-between items-center">
+    <footer className="w-full px-25 py-4 bg-primary text-white flex justify-between items-center mt-auto">
       <p>
         © 2025 JOOL <b>·</b> Powered by AAAIMX <b>·</b> Software Division
       </p>
