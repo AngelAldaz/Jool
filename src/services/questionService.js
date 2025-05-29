@@ -1,5 +1,5 @@
 import endpoints from "./configAPI";
-import { createAuthHeaders, isAuthenticated } from "./storageService";
+import { authHeader, isLoggedIn } from "./authService";
 
 /**
  * Fetches all questions from the API
@@ -7,13 +7,13 @@ import { createAuthHeaders, isAuthenticated } from "./storageService";
  */
 export const getAllQuestions = async () => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getAll, {
       method: "GET",
-      headers: createAuthHeaders()
+      headers: authHeader()
     });
 
     if (!response.ok) {
@@ -55,13 +55,13 @@ export const getAllQuestions = async () => {
  */
 export const getQuestionById = async (id) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getById(id), {
       method: "GET",
-      headers: createAuthHeaders()
+      headers: authHeader()
     });
 
     if (!response.ok) {
@@ -103,13 +103,13 @@ export const getQuestionById = async (id) => {
  */
 export const createQuestion = async (questionData) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.create, {
       method: "POST",
-      headers: createAuthHeaders(),
+      headers: authHeader(),
       body: JSON.stringify(questionData)
     });
 
@@ -150,7 +150,7 @@ export const createQuestion = async (questionData) => {
  */
 export const createResponse = async (responseData) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
@@ -158,7 +158,7 @@ export const createResponse = async (responseData) => {
 
     const response = await fetch(endpoints.responses.create, {
       method: "POST",
-      headers: createAuthHeaders(),
+      headers: authHeader(),
       body: JSON.stringify(responseData)
     });
 
@@ -202,7 +202,7 @@ export const createResponse = async (responseData) => {
  */
 export const deleteResponse = async (responseId) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
@@ -210,7 +210,7 @@ export const deleteResponse = async (responseId) => {
 
     const response = await fetch(endpoints.responses.delete(responseId), {
       method: "DELETE",
-      headers: createAuthHeaders()
+      headers: authHeader()
     });
 
     if (!response.ok) {
@@ -239,13 +239,13 @@ export const deleteResponse = async (responseId) => {
  */
 export const getQuestionsByHashtag = async (hashtagName) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getByHashtag(hashtagName), {
       method: "GET",
-      headers: createAuthHeaders()
+      headers: authHeader()
     });
 
     if (!response.ok) {
@@ -285,13 +285,13 @@ export const getQuestionsByHashtag = async (hashtagName) => {
  */
 export const getQuestionsByUser = async (userId) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
     const response = await fetch(endpoints.questions.getByUserId(userId), {
       method: "GET",
-      headers: createAuthHeaders()
+      headers: authHeader()
     });
 
     if (!response.ok) {
@@ -331,7 +331,7 @@ export const getQuestionsByUser = async (userId) => {
  */
 export const deleteQuestion = async (questionId) => {
   try {
-    if (!isAuthenticated()) {
+    if (!isLoggedIn()) {
       throw new Error("Authentication required");
     }
 
@@ -339,7 +339,7 @@ export const deleteQuestion = async (questionId) => {
 
     const response = await fetch(endpoints.questions.delete(questionId), {
       method: "DELETE",
-      headers: createAuthHeaders()
+      headers: authHeader()
     });
 
     if (!response.ok) {

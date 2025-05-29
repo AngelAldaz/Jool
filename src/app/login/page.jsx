@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import Footer from "@/components/Footer";
+import Footer from "@/components/layout/Footer";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/infrastructure/authService";
-import MicrosoftLoginButton from "@/components/MicrosoftLoginButton";
-import { authService } from "@/infrastructure/authService";
+import { loginUser } from "@/services/authService";
+import MicrosoftLoginButton from "@/components/auth/MicrosoftLoginButton";
+import { authService } from "@/services/authService";
 
 export default function LogIn() {
   const router = useRouter();

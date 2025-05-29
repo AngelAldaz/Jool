@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Footer from "@/components/Footer";
-import QuestionHeading from "@/components/QuestionHeading";
-import ReturnButton from "@/components/ReturnButton";
-import StickyInteractions from "@/components/StickyInteractions";
+import Footer from "@/components/layout/Footer";
+import QuestionHeading from "@/components/question/QuestionHeading";
+import ReturnButton from "@/components/layout/ReturnButton";
+import StickyInteractions from "@/components/question/StickyInteractions";
 import ReactMarkdown from "react-markdown";
-import Answer from "@/components/Answer";
+import Answer from "@/components/question/Answer";
 import MDEditor from "@uiw/react-md-editor";
-import { getQuestionById, createResponse, deleteResponse } from "@/infrastructure/questionService";
-import { isLoggedIn, getCurrentUser } from "@/infrastructure/authService";
+import { getUserId } from "@/utils/userUtils";
+import { getQuestionById, createResponse, deleteResponse } from "@/services/questionService";
+import { isLoggedIn, getCurrentUser } from "@/services/authService";
 
 export default function QuestionDetail() {
   const searchParams = useSearchParams();

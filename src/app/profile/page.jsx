@@ -2,13 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Footer from "@/components/Footer";
-import ReturnButton from "@/components/ReturnButton";
+import Footer from "@/components/layout/Footer";
+import ReturnButton from "@/components/layout/ReturnButton";
 import MDEditor from "@uiw/react-md-editor";
-import { isLoggedIn, getCurrentUser } from "@/infrastructure/authService";
-import { createQuestion, getQuestionsByUser, deleteQuestion } from "@/infrastructure/questionService";
-import { getAllHashtags } from "@/infrastructure/hashtagService";
-import AuthGuard from "@/components/AuthGuard";
+import { getCurrentUser } from "@/services/authService";
+import { createQuestion, getQuestionsByUser, deleteQuestion } from "@/services/questionService";
+import { getAllHashtags } from "@/services/hashtagService";
+import AuthGuard from "@/components/auth/AuthGuard";
+import Avatar from "@/components/ui/Avatar";
+import HashtagInput from "@/components/form/HashtagInput";
+import HashtagBadge from "@/components/ui/HashtagBadge";
+import StatusMessage from "@/components/ui/StatusMessage";
+import LoadingSpinner, { FullPageLoading } from "@/components/ui/LoadingSpinner";
+import { formatDate } from "@/utils/dateUtils";
+import { getUserId, getUsername } from "@/utils/userUtils";
 
 export default function Profile() {
   const router = useRouter();
@@ -27,12 +34,11 @@ export default function Profile() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [submitMessageType, setSubmitMessageType] = useState("info");
   
-  // Estados para el dropdown de hashtags
+  // Estados para hashtags
   const [availableHashtags, setAvailableHashtags] = useState([]);
   const [hashtagsLoading, setHashtagsLoading] = useState(false);
-  const [newHashtagInput, setNewHashtagInput] = useState("");
-  const [showHashtagDropdown, setShowHashtagDropdown] = useState(false);
   
   // Estados para eliminar preguntas
   const [deletingQuestion, setDeletingQuestion] = useState(false);
@@ -51,7 +57,7 @@ export default function Profile() {
         setUser(currentUser);
         
         // Verificar que el ID de usuario exista
-        const userId = currentUser.id || currentUser.user_id;
+        const userId = getUserId(currentUser);
         if (!userId) {
           console.error("ID de usuario no encontrado en los datos del usuario:", currentUser);
           throw new Error("No se pudo determinar el ID del usuario");
@@ -115,14 +121,12 @@ export default function Profile() {
 
   // Función para añadir un hashtag a la pregunta
   const handleAddHashtag = (hashtagName) => {
-    // Verificar que no esté ya añadido
     if (!newQuestion.hashtags.includes(hashtagName)) {
       setNewQuestion(prev => ({
         ...prev,
         hashtags: [...prev.hashtags, hashtagName]
       }));
     }
-    setNewHashtagInput("");
   };
 
   // Función para remover un hashtag de la pregunta
@@ -139,6 +143,7 @@ export default function Profile() {
 
     if (!newQuestion.title.trim() || !newQuestion.content.trim()) {
       setSubmitMessage("Por favor, completa todos los campos obligatorios.");
+      setSubmitMessageType("warning");
       return;
     }
 
@@ -147,7 +152,7 @@ export default function Profile() {
 
     try {
       // Obtener el ID de usuario de manera segura
-      const userId = user.id || user.user_id;
+      const userId = getUserId(user);
       if (!userId) {
         throw new Error("No se pudo determinar el ID del usuario");
       }
@@ -167,6 +172,7 @@ export default function Profile() {
       console.log("Pregunta creada:", createdQuestion);
       
       setSubmitMessage("¡Pregunta creada correctamente!");
+      setSubmitMessageType("success");
       
       // Limpiar el formulario
       setNewQuestion({
@@ -181,6 +187,7 @@ export default function Profile() {
     } catch (error) {
       console.error("Error al crear pregunta:", error);
       setSubmitMessage(`Error al enviar la pregunta: ${error.message}`);
+      setSubmitMessageType("error");
     } finally {
       setIsSubmitting(false);
     }
@@ -198,7 +205,7 @@ export default function Profile() {
         await deleteQuestion(questionId);
         
         // Obtener el ID de usuario de manera segura
-        const userId = user.id || user.user_id;
+        const userId = getUserId(user);
         
         // Actualizar la lista de preguntas
         const updatedQuestions = await getQuestionsByUser(userId);
@@ -221,46 +228,23 @@ export default function Profile() {
     setConfirmDelete(null);
   };
 
-  // Mostrar un mensaje de carga mientras se obtienen los datos
+  // Si está cargando, mostrar spinner
   if (loading) {
-    return (
-      <>
-        <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
-          <ReturnButton />
-          <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        </main>
-        <Footer />
-      </>
-    );
+    return <FullPageLoading text="Cargando perfil..." />;
   }
 
-  // Mostrar un mensaje de error si ocurrió algún problema
+  // Si hay error, mostrar mensaje
   if (error) {
     return (
-      <>
+      <AuthGuard>
         <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
           <ReturnButton />
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            {error}
-          </div>
+          <StatusMessage message={error} type="error" />
         </main>
         <Footer />
-      </>
+      </AuthGuard>
     );
   }
-
-  // Formatear fecha a formato legible
-  const formatDate = (dateString) => {
-    if (!dateString) return "No disponible";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
 
   return (
     <AuthGuard>
@@ -272,18 +256,14 @@ export default function Profile() {
           <h1 className="text-2xl md:text-3xl font-bold mb-4">Perfil de Usuario</h1>
           
           <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-              <img 
-                src="https://images.dog.ceo/breeds/maltese/n02085936_6927.jpg" 
-                alt="Avatar" 
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Avatar user={user} size="xl" />
             
             <div className="flex-1 space-y-4">
               <div>
-                <h2 className="text-xl font-bold">{user.first_name} {user.last_name}</h2>
-                <p className="text-gray-600">@{user.email.split('@')[0]}</p>
+                <h2 className="text-xl font-bold">
+                  {user.first_name || user.firstName} {user.last_name || user.lastName}
+                </h2>
+                <p className="text-gray-600">@{getUsername(user)}</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -345,85 +325,13 @@ export default function Profile() {
                 Hashtags
               </label>
               
-              {/* Hashtags seleccionados */}
-              <div className="flex flex-wrap gap-2 mb-2">
-                {newQuestion.hashtags.map(tag => (
-                  <div 
-                    key={tag} 
-                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-                  >
-                    #{tag}
-                    <button 
-                      type="button"
-                      onClick={() => handleRemoveHashtag(tag)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Dropdown para seleccionar hashtags */}
-              <div className="relative">
-                <div className="flex">
-                  <input
-                    type="text"
-                    id="hashtag-input"
-                    value={newHashtagInput}
-                    onChange={(e) => setNewHashtagInput(e.target.value)}
-                    onFocus={() => setShowHashtagDropdown(true)}
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Buscar o escribir hashtag"
-                  />
-                </div>
-                
-                {showHashtagDropdown && newHashtagInput.trim() && (
-                  <div 
-                    className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-lg max-h-60 overflow-y-auto"
-                    onBlur={() => setShowHashtagDropdown(false)}
-                  >
-                    {hashtagsLoading ? (
-                      <div className="flex justify-center items-center p-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-                      </div>
-                    ) : (
-                      <ul>
-                        {availableHashtags
-                          .filter(tag => tag.name.toLowerCase().includes(newHashtagInput.toLowerCase()))
-                          .map(tag => (
-                            <li 
-                              key={tag.hashtag_id}
-                              onClick={() => {
-                                handleAddHashtag(tag.name);
-                                setShowHashtagDropdown(false);
-                              }}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                            >
-                              #{tag.name} <span className="text-gray-500 text-sm">({tag.used_count} usos)</span>
-                            </li>
-                          ))}
-                        
-                        {!availableHashtags.some(tag => 
-                            tag.name.toLowerCase() === newHashtagInput.toLowerCase()
-                          ) && (
-                          <li 
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-t border-gray-200"
-                            onClick={() => {
-                              handleAddHashtag(newHashtagInput);
-                              setShowHashtagDropdown(false);
-                            }}
-                          >
-                            Usar: <span className="font-bold">#{newHashtagInput}</span>
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
+              <HashtagInput
+                selectedTags={newQuestion.hashtags}
+                onAddTag={handleAddHashtag}
+                onRemoveTag={handleRemoveHashtag}
+                availableTags={availableHashtags}
+                isLoading={hashtagsLoading}
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -436,15 +344,11 @@ export default function Profile() {
               </button>
 
               {submitMessage && (
-                <p
-                  className={`text-sm ${
-                    submitMessage.includes("Error")
-                      ? "text-red-600"
-                      : "text-green-600"
-                  }`}
-                >
-                  {submitMessage}
-                </p>
+                <StatusMessage 
+                  message={submitMessage} 
+                  type={submitMessageType}
+                  onClose={() => setSubmitMessage("")}
+                />
               )}
             </div>
           </form>
@@ -498,14 +402,13 @@ export default function Profile() {
                   <h3 className="font-bold text-lg mb-2 pr-8">{question.title}</h3>
                   <p className="text-gray-600 line-clamp-2">{question.content}</p>
                   <div className="flex justify-between items-center mt-3">
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       {question.hashtags && question.hashtags.map(tag => (
-                        <span 
-                          key={typeof tag === 'object' ? tag.hashtag_id : tag} 
-                          className="bg-gray-100 px-2 py-1 rounded-full text-xs text-gray-600"
-                        >
-                          #{typeof tag === 'object' ? tag.name : tag}
-                        </span>
+                        <HashtagBadge
+                          key={typeof tag === 'object' ? tag.hashtag_id : tag}
+                          tag={tag}
+                          size="sm"
+                        />
                       ))}
                     </div>
                     <p className="text-sm text-gray-500">{formatDate(question.date)}</p>

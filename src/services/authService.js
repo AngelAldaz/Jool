@@ -1,8 +1,14 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
 import endpoints from "./configAPI";
-import { setUser, clearUser, getUser, getToken, isAuthenticated } from "./storageService";
-import { TOKEN_COOKIE, EXPIRY_COOKIE, USER_DATA_KEY } from './constants';
+import { 
+  saveTokenToCookies, 
+  saveUserToLocalStorage, 
+  getTokenFromCookies, 
+  getUserFromLocalStorage, 
+  isTokenValid, 
+  clearAuthData,
+  normalizeUserData
+} from '@/utils/authUtils';
 
 /**
  * Attempts to login a user with the provided credentials
@@ -15,18 +21,12 @@ export const loginUser = async (email, password) => {
     const response = await axios.post(endpoints.auth.login, { email, password });
     
     if (response.data && response.data.token) {
-      // Save token to cookies
-      Cookies.set(TOKEN_COOKIE, response.data.token, {
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax'
-      });
+      // Guardar token en cookies
+      const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 día
+      saveTokenToCookies(response.data.token, expiryDate);
       
-      // Save expiration
-      Cookies.set(EXPIRY_COOKIE, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
-      
-      // Save user data
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(response.data.user));
+      // Guardar datos de usuario en localStorage
+      saveUserToLocalStorage(response.data.user);
       
       return response.data;
     }
@@ -101,7 +101,7 @@ export const registerUser = async (userData) => {
  * @returns {boolean} - True if user is logged in
  */
 export const isLoggedIn = () => {
-  return isAuthenticated();
+  return isTokenValid();
 };
 
 /**
@@ -109,7 +109,7 @@ export const isLoggedIn = () => {
  * @returns {Object|null} - User data or null if not logged in
  */
 export const getCurrentUser = () => {
-  return getUser();
+  return getUserFromLocalStorage();
 };
 
 /**
@@ -117,16 +117,14 @@ export const getCurrentUser = () => {
  * @returns {string|null} - The auth token or null if not logged in
  */
 export const getAuthToken = () => {
-  return getToken();
+  return getTokenFromCookies();
 };
 
 /**
  * Logs out the current user
  */
 export const logout = () => {
-  Cookies.remove(TOKEN_COOKIE);
-  Cookies.remove(EXPIRY_COOKIE);
-  localStorage.removeItem(USER_DATA_KEY);
+  clearAuthData();
 };
 
 /**
@@ -134,8 +132,13 @@ export const logout = () => {
  * @returns {Object} - Headers object with Authorization
  */
 export const authHeader = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const token = getAuthToken();
+  return token 
+    ? { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      } 
+    : { 'Content-Type': 'application/json' };
 };
 
 // Microsoft Authentication Service
@@ -174,54 +177,40 @@ export const authService = {
         return null;
       }
       
+      // Guardar token en cookies
       const tokenValue = authData.token.accessToken;
       const expiryDate = new Date(authData.token.expiresAt);
       
-      console.log('Guardando token:', {
-        value: tokenValue ? tokenValue.substring(0, 10) + '...' : null,
-        expiry: expiryDate
-      });
+      const tokenSaved = saveTokenToCookies(tokenValue, expiryDate);
       
-      // Save token in cookies
-      Cookies.set(TOKEN_COOKIE, tokenValue, {
-        expires: expiryDate,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax'
-      });
+      if (!tokenSaved) {
+        console.error('Error al guardar token en cookies');
+        return null;
+      }
       
-      // Save expiration date
-      Cookies.set(EXPIRY_COOKIE, authData.token.expiresAt);
-      
-      // Verificar que el token se ha guardado correctamente
-      const savedToken = Cookies.get(TOKEN_COOKIE);
-      const savedExpiry = Cookies.get(EXPIRY_COOKIE);
-      
-      console.log('Token guardado correctamente:', !!savedToken, 'Expiry guardado:', !!savedExpiry);
-      
-      // Save user data in localStorage with consistent structure
-      // Ensure we save both id and user_id for compatibility
+      // Preparar datos de usuario
       const userData = {
         id: authData.user_id,
-        user_id: authData.user_id, // Duplicate for compatibility
         email: authData.email,
         first_name: authData.first_name,
-        firstName: authData.first_name, // Add both formats for compatibility
         last_name: authData.last_name,
-        lastName: authData.last_name, // Add both formats for compatibility
-        isActive: authData.is_active,
-        is_active: authData.is_active, // Add both formats for compatibility
-        hasImage: authData.has_image,
-        has_image: authData.has_image, // Add both formats for compatibility
+        is_active: authData.is_active,
+        has_image: authData.has_image,
         phone: authData.phone
       };
       
-      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-      console.log('Datos de usuario guardados en localStorage:', userData);
+      // Guardar datos de usuario en localStorage
+      const userSaved = saveUserToLocalStorage(userData);
+      
+      if (!userSaved) {
+        console.error('Error al guardar datos de usuario en localStorage');
+        return null;
+      }
       
       // Clear hash from URL to prevent data exposure
       window.history.replaceState(null, '', window.location.pathname);
       
-      return userData;
+      return normalizeUserData(userData);
     } catch (error) {
       console.error('Error procesando datos de autenticación:', error);
       return null;
@@ -229,52 +218,13 @@ export const authService = {
   },
 
   // Check if user is authenticated
-  isAuthenticated: () => {
-    if (typeof window === 'undefined') return false;
-    
-    try {
-      const token = Cookies.get(TOKEN_COOKIE);
-      const expiry = Cookies.get(EXPIRY_COOKIE);
-      
-      console.log('Verificando autenticación - Token:', !!token, 'Expiry:', !!expiry);
-      
-      if (!token || !expiry) {
-        console.log('No se encontró token o fecha de expiración');
-        return false;
-      }
-      
-      // Check if token has expired
-      const expiryDate = new Date(expiry);
-      const isValid = expiryDate > new Date();
-      
-      console.log('Token expira en:', expiryDate, 'Es válido:', isValid);
-      
-      // Verificar también que tengamos datos de usuario
-      const userData = localStorage.getItem(USER_DATA_KEY);
-      if (!userData) {
-        console.log('No se encontraron datos de usuario en localStorage');
-        return false;
-      }
-      
-      return isValid;
-    } catch (error) {
-      console.error('Error al verificar autenticación:', error);
-      return false;
-    }
-  },
+  isAuthenticated: isTokenValid,
 
   // Get current token
-  getToken: () => {
-    return Cookies.get(TOKEN_COOKIE);
-  },
+  getToken: getTokenFromCookies,
 
   // Get user data from localStorage
-  getUserData: () => {
-    if (typeof window === 'undefined') return null;
-    
-    const userData = localStorage.getItem(USER_DATA_KEY);
-    return userData ? JSON.parse(userData) : null;
-  }
+  getUserData: getUserFromLocalStorage
 };
 
 export default {

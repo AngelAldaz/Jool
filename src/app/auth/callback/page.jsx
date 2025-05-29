@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authService } from '@/infrastructure/authService';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { authService } from '@/services/authService';
 
 export default function AuthCallback() {
   const router = useRouter();

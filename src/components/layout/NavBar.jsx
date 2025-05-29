@@ -1,7 +1,7 @@
 "use client";
-import SearchBar from "./SearchBar";
-import UserButton from "./UserButton";
-import FilterButtons from "./FilterButtons";
+import SearchBar from "../form/SearchBar";
+import UserButton from "../auth/UserButton";
+import FilterButtons from "../form/FilterButtons";
 import Link from "next/link";
 
 export default function NavBar({ onFilterChange, onSearch }) {

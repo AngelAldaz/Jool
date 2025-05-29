@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authService } from '@/infrastructure/authService';
+import { authService } from '@/services/authService';
 
 const withAuth = (WrappedComponent) => {
   const WithAuth = (props) => {

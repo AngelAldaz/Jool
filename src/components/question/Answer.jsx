@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import AnswerInfo from "./AnswerInfo";
-import { getCurrentUser } from "@/infrastructure/authService";
+import { getCurrentUser } from "@/services/authService";
 
 export default function Answer({
   responseId,

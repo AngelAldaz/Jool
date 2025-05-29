@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Footer from "@/components/Footer";
-import { registerUser } from "@/infrastructure/authService";
+import Footer from "@/components/layout/Footer";
+import { registerUser } from "@/services/authService";
 
 export default function SignUp() {
   const router = useRouter();

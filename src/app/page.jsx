@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import NavBar from "@/components/NavBar";
-import Footer from "@/components/Footer";
-import PostCard from "@/components/PostCard";
-import { getAllQuestions } from "@/infrastructure/questionService";
+import NavBar from "@/components/layout/NavBar";
+import Footer from "@/components/layout/Footer";
+import PostCard from "@/components/question/PostCard";
+import { getAllQuestions } from "@/services/questionService";
 import { useRouter } from "next/navigation";
-import AuthGuard from "@/components/AuthGuard";
+import AuthGuard from "@/components/auth/AuthGuard";
+import StatusMessage from "@/components/ui/StatusMessage";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function Home() {
   const [questions, setQuestions] = useState([]);
@@ -78,39 +80,56 @@ export default function Home() {
       result = result.filter(q => 
         q.title.toLowerCase().includes(query) || 
         q.content.toLowerCase().includes(query) || 
-        (q.hashtags && q.hashtags.some(h => h.name.toLowerCase().includes(query)))
+        (q.hashtags && q.hashtags.some(h => {
+          const tagName = typeof h === 'object' ? h.name : h;
+          return tagName.toLowerCase().includes(query);
+        }))
       );
     }
     
     setFilteredQuestions(result);
   };
 
+  // Contenido a mostrar según el estado
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="py-10">
+          <LoadingSpinner text="Cargando preguntas..." />
+        </div>
+      );
+    }
+    
+    if (error) {
+      return <StatusMessage message={error} type="error" />;
+    }
+    
+    if (filteredQuestions.length === 0) {
+      return (
+        <div className="text-center py-10">
+          <h3 className="text-xl font-medium text-gray-600">
+            {searchQuery ? "No se encontraron resultados para tu búsqueda" : "No hay preguntas disponibles"}
+          </h3>
+          <p className="mt-2 text-gray-500">
+            {searchQuery 
+              ? "Intenta con otra búsqueda o filtro" 
+              : "¡Sé el primero en publicar una pregunta!"
+            }
+          </p>
+        </div>
+      );
+    }
+    
+    return filteredQuestions.map((question) => (
+      <PostCard key={question.question_id} question={question} />
+    ));
+  };
+
   return (
     <AuthGuard>
       <NavBar onFilterChange={handleFilterChange} onSearch={handleSearch} />
       <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
-        {loading ? (
-          <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            {error}
-          </div>
-        ) : filteredQuestions.length === 0 ? (
-          <div className="text-center py-10">
-            <h3 className="text-xl font-medium text-gray-600">
-              {searchQuery ? "No se encontraron resultados para tu búsqueda" : "No hay preguntas disponibles"}
-            </h3>
-            <p className="mt-2 text-gray-500">
-              {searchQuery ? "Intenta con otra búsqueda o filtro" : "¡Sé el primero en publicar una pregunta!"}
-            </p>
-          </div>
-        ) : (
-          filteredQuestions.map((question) => (
-            <PostCard key={question.question_id} question={question} />
-          ))
-        )}
+        {renderContent()}
       </main>
       <Footer />
     </AuthGuard>

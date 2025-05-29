@@ -1,5 +1,5 @@
 import React from 'react';
-import { authService } from '../infrastructure/authService';
+import { authService } from '@/services/authService';
 
 const MicrosoftLoginButton = ({ className, text = 'Continuar con Microsoft' }) => {
   const handleLogin = async () => {

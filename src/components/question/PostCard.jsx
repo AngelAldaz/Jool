@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
-import HashTag from "./Hashtag";
 import { useState } from "react";
 import Link from "next/link";
+import HashtagBadge from "../ui/HashtagBadge";
+import { getTimeAgo } from "@/utils/dateUtils";
 
 export default function PostCard({ question }) {
   const [isStarHovered, setIsStarHovered] = useState(false);
@@ -15,22 +16,6 @@ export default function PostCard({ question }) {
     e.preventDefault();
     setStarCount(isLiked ? starCount - 1 : starCount + 1);
     setIsLiked(!isLiked);
-  };
-
-  // Format date to a readable string
-  const formatDate = (dateString) => {
-    if (!dateString) return "Hace un momento";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "Hoy";
-    if (diffDays === 1) return "Ayer";
-    if (diffDays < 7) return `Hace ${diffDays} días`;
-    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
-    if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`;
-    return `Hace ${Math.floor(diffDays / 365)} años`;
   };
 
   if (!question) {
@@ -158,11 +143,15 @@ export default function PostCard({ question }) {
       </section>
       <section className="flex gap-2 mt-3 flex-wrap">
         {question.hashtags && question.hashtags.map((hashtag) => (
-          <HashTag key={hashtag.hashtag_id}>{hashtag.name}</HashTag>
+          <HashtagBadge 
+            key={typeof hashtag === 'object' ? hashtag.hashtag_id : hashtag} 
+            tag={hashtag} 
+            size="md"
+          />
         ))}
       </section>
       <section className="mt-2 flex justify-between items-center">
-        <p className="text-primary font-light">{formatDate(question.date)}</p>
+        <p className="text-primary font-light">{getTimeAgo(question.date)}</p>
         <Link href={`/question?id=${question.question_id}`}>
           <Image src="/goto_link.svg" alt="Views" width={30} height={30} />
         </Link>
