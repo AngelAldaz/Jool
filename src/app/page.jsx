@@ -4,8 +4,8 @@ import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import PostCard from "@/components/PostCard";
 import { getAllQuestions } from "@/infrastructure/questionService";
-import { isLoggedIn } from "@/infrastructure/authService";
 import { useRouter } from "next/navigation";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function Home() {
   const [questions, setQuestions] = useState([]);
@@ -17,15 +17,9 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
-    if (!isLoggedIn()) {
-      router.push("/login");
-      return;
-    }
-
     // Fetch questions
     fetchQuestions();
-  }, [router]);
+  }, []);
 
   // Efecto para aplicar filtros cuando cambian las preguntas o filtros
   useEffect(() => {
@@ -92,7 +86,7 @@ export default function Home() {
   };
 
   return (
-    <>
+    <AuthGuard>
       <NavBar onFilterChange={handleFilterChange} onSearch={handleSearch} />
       <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
         {loading ? (
@@ -119,6 +113,6 @@ export default function Home() {
         )}
       </main>
       <Footer />
-    </>
+    </AuthGuard>
   );
 }

@@ -1,5 +1,8 @@
+import axios from 'axios';
+import Cookies from 'js-cookie';
 import endpoints from "./configAPI";
 import { setUser, clearUser, getUser, getToken, isAuthenticated } from "./storageService";
+import { TOKEN_COOKIE, EXPIRY_COOKIE, USER_DATA_KEY } from './constants';
 
 /**
  * Attempts to login a user with the provided credentials
@@ -9,41 +12,31 @@ import { setUser, clearUser, getUser, getToken, isAuthenticated } from "./storag
  */
 export const loginUser = async (email, password) => {
   try {
-    const response = await fetch(endpoints.auth.login, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      // First try to get the error text
-      const errorText = await response.text();
-
-      try {
-        // Try to parse it as JSON
-        const errorData = JSON.parse(errorText);
-        throw new Error(
-          errorData.detail || errorData.message || `Authentication error: ${response.status}`
-        );
-      } catch (parseError) {
-        // If it's not JSON, use the text directly
-        throw new Error(
-          errorText || `Authentication error: ${response.statusText}`
-        );
-      }
+    const response = await axios.post(endpoints.auth.login, { email, password });
+    
+    if (response.data && response.data.token) {
+      // Save token to cookies
+      Cookies.set(TOKEN_COOKIE, response.data.token, {
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax'
+      });
+      
+      // Save expiration
+      Cookies.set(EXPIRY_COOKIE, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+      
+      // Save user data
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(response.data.user));
+      
+      return response.data;
     }
-
-    // Parse the user data including token
-    const userData = await response.json();
     
-    // Store user data and token using storageService
-    console.log(userData);
-    setUser(userData);
-    
-    return userData;
+    throw new Error('Invalid response from server');
   } catch (error) {
-    console.error("Login error:", error);
-    throw error;
+    console.error('Login error:', error);
+    throw error.response?.data?.message 
+      ? new Error(error.response.data.message) 
+      : new Error('Error al iniciar sesión. Verifique sus credenciales.');
   }
 };
 
@@ -131,7 +124,9 @@ export const getAuthToken = () => {
  * Logs out the current user
  */
 export const logout = () => {
-  clearUser();
+  Cookies.remove(TOKEN_COOKIE);
+  Cookies.remove(EXPIRY_COOKIE);
+  localStorage.removeItem(USER_DATA_KEY);
 };
 
 /**
@@ -143,6 +138,145 @@ export const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// Microsoft Authentication Service
+export const authService = {
+  // Initiates Microsoft authentication flow
+  loginWithMicrosoft: async () => {
+    try {
+      const response = await axios.get(`${endpoints.auth.microsoftLogin}`);
+      console.log('Respuesta del endpoint de login de Microsoft:', response.data);
+      const { redirect_url } = response.data;
+      
+      // Redirect user to Microsoft login page
+      window.location.href = redirect_url;
+    } catch (error) {
+      console.error('Error iniciando autenticación con Microsoft:', error);
+      throw error;
+    }
+  },
+
+  // Process and save authentication data from hash fragment
+  processAuthHash: () => {
+    if (typeof window === 'undefined' || !window.location.hash) return null;
+    
+    try {
+      // Extract and decode data from hash (remove initial #)
+      const encodedData = window.location.hash.substring(1);
+      const jsonStr = decodeURIComponent(encodedData);
+      const authData = JSON.parse(jsonStr);
+      
+      // Log the token obtained from Microsoft authentication
+      console.log('Token obtenido de Microsoft:', authData.token);
+      
+      // Comprobar que tenemos la estructura esperada
+      if (!authData.token || !authData.token.accessToken || !authData.token.expiresAt) {
+        console.error('Estructura de token inválida:', authData);
+        return null;
+      }
+      
+      const tokenValue = authData.token.accessToken;
+      const expiryDate = new Date(authData.token.expiresAt);
+      
+      console.log('Guardando token:', {
+        value: tokenValue ? tokenValue.substring(0, 10) + '...' : null,
+        expiry: expiryDate
+      });
+      
+      // Save token in cookies
+      Cookies.set(TOKEN_COOKIE, tokenValue, {
+        expires: expiryDate,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax'
+      });
+      
+      // Save expiration date
+      Cookies.set(EXPIRY_COOKIE, authData.token.expiresAt);
+      
+      // Verificar que el token se ha guardado correctamente
+      const savedToken = Cookies.get(TOKEN_COOKIE);
+      const savedExpiry = Cookies.get(EXPIRY_COOKIE);
+      
+      console.log('Token guardado correctamente:', !!savedToken, 'Expiry guardado:', !!savedExpiry);
+      
+      // Save user data in localStorage with consistent structure
+      // Ensure we save both id and user_id for compatibility
+      const userData = {
+        id: authData.user_id,
+        user_id: authData.user_id, // Duplicate for compatibility
+        email: authData.email,
+        first_name: authData.first_name,
+        firstName: authData.first_name, // Add both formats for compatibility
+        last_name: authData.last_name,
+        lastName: authData.last_name, // Add both formats for compatibility
+        isActive: authData.is_active,
+        is_active: authData.is_active, // Add both formats for compatibility
+        hasImage: authData.has_image,
+        has_image: authData.has_image, // Add both formats for compatibility
+        phone: authData.phone
+      };
+      
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+      console.log('Datos de usuario guardados en localStorage:', userData);
+      
+      // Clear hash from URL to prevent data exposure
+      window.history.replaceState(null, '', window.location.pathname);
+      
+      return userData;
+    } catch (error) {
+      console.error('Error procesando datos de autenticación:', error);
+      return null;
+    }
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: () => {
+    if (typeof window === 'undefined') return false;
+    
+    try {
+      const token = Cookies.get(TOKEN_COOKIE);
+      const expiry = Cookies.get(EXPIRY_COOKIE);
+      
+      console.log('Verificando autenticación - Token:', !!token, 'Expiry:', !!expiry);
+      
+      if (!token || !expiry) {
+        console.log('No se encontró token o fecha de expiración');
+        return false;
+      }
+      
+      // Check if token has expired
+      const expiryDate = new Date(expiry);
+      const isValid = expiryDate > new Date();
+      
+      console.log('Token expira en:', expiryDate, 'Es válido:', isValid);
+      
+      // Verificar también que tengamos datos de usuario
+      const userData = localStorage.getItem(USER_DATA_KEY);
+      if (!userData) {
+        console.log('No se encontraron datos de usuario en localStorage');
+        return false;
+      }
+      
+      return isValid;
+    } catch (error) {
+      console.error('Error al verificar autenticación:', error);
+      return false;
+    }
+  },
+
+  // Get current token
+  getToken: () => {
+    return Cookies.get(TOKEN_COOKIE);
+  },
+
+  // Get user data from localStorage
+  getUserData: () => {
+    if (typeof window === 'undefined') return null;
+    
+    const userData = localStorage.getItem(USER_DATA_KEY);
+    return userData ? JSON.parse(userData) : null;
+  }
+};
+
 export default {
   loginUser,
   registerUser,
@@ -150,5 +284,6 @@ export default {
   getCurrentUser,
   getAuthToken,
   logout,
-  authHeader
+  authHeader,
+  authService
 }; 

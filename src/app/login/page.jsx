@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/infrastructure/authService";
+import MicrosoftLoginButton from "@/components/MicrosoftLoginButton";
+import { authService } from "@/infrastructure/authService";
 
 export default function LogIn() {
   const router = useRouter();
@@ -14,6 +16,15 @@ export default function LogIn() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Verificar si el usuario ya está autenticado
+  useEffect(() => {
+    // Si el usuario ya está autenticado, redirigir a la página principal
+    if (authService.isAuthenticated()) {
+      console.log("Usuario ya autenticado, redirigiendo a página principal");
+      router.push("/");
+    }
+  }, [router]);
 
   const togglePassword = () => {
     setShowPassword(!showPassword);
@@ -168,13 +179,7 @@ export default function LogIn() {
               </div>
 
               <div className="">
-                <button
-                  type="button"
-                  className="w-full inline-flex justify-center items-center gap-2 py-3 px-4 border-2 border-gray-200 rounded-xl bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
-                >
-                  <span>👨‍💻</span>
-                  Microsoft
-                </button>
+                <MicrosoftLoginButton />
               </div>
 
               <div className="text-center">

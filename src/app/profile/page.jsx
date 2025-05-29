@@ -8,6 +8,7 @@ import MDEditor from "@uiw/react-md-editor";
 import { isLoggedIn, getCurrentUser } from "@/infrastructure/authService";
 import { createQuestion, getQuestionsByUser, deleteQuestion } from "@/infrastructure/questionService";
 import { getAllHashtags } from "@/infrastructure/hashtagService";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function Profile() {
   const router = useRouter();
@@ -39,12 +40,6 @@ export default function Profile() {
   
   // Cargar datos del usuario cuando se monta el componente
   useEffect(() => {
-    // Verificar si el usuario está autenticado
-    if (!isLoggedIn()) {
-      router.push("/login");
-      return;
-    }
-
     const loadUserData = async () => {
       try {
         const currentUser = getCurrentUser();
@@ -52,11 +47,20 @@ export default function Profile() {
           throw new Error("No se encontraron datos del usuario");
         }
         
+        console.log("Datos de usuario cargados:", currentUser);
         setUser(currentUser);
         
-        // Cargar preguntas del usuario
+        // Verificar que el ID de usuario exista
+        const userId = currentUser.id || currentUser.user_id;
+        if (!userId) {
+          console.error("ID de usuario no encontrado en los datos del usuario:", currentUser);
+          throw new Error("No se pudo determinar el ID del usuario");
+        }
+        
+        // Cargar preguntas del usuario usando el ID correcto
         try {
-          const questions = await getQuestionsByUser(currentUser.user_id);
+          console.log("Obteniendo preguntas para el usuario con ID:", userId);
+          const questions = await getQuestionsByUser(userId);
           setUserQuestions(questions || []);
         } catch (questionsError) {
           console.error("Error al cargar preguntas del usuario:", questionsError);
@@ -142,11 +146,17 @@ export default function Profile() {
     setSubmitMessage("");
 
     try {
-      // Crear objeto de pregunta
+      // Obtener el ID de usuario de manera segura
+      const userId = user.id || user.user_id;
+      if (!userId) {
+        throw new Error("No se pudo determinar el ID del usuario");
+      }
+      
+      // Crear objeto de pregunta con el ID correcto
       const questionData = {
         title: newQuestion.title,
         content: newQuestion.content,
-        user_id: user.user_id,
+        user_id: userId,
         hashtags: newQuestion.hashtags
       };
       
@@ -166,7 +176,7 @@ export default function Profile() {
       });
       
       // Actualizar la lista de preguntas del usuario
-      const updatedQuestions = await getQuestionsByUser(user.user_id);
+      const updatedQuestions = await getQuestionsByUser(userId);
       setUserQuestions(updatedQuestions);
     } catch (error) {
       console.error("Error al crear pregunta:", error);
@@ -186,8 +196,12 @@ export default function Profile() {
       try {
         setDeletingQuestion(true);
         await deleteQuestion(questionId);
+        
+        // Obtener el ID de usuario de manera segura
+        const userId = user.id || user.user_id;
+        
         // Actualizar la lista de preguntas
-        const updatedQuestions = await getQuestionsByUser(user.user_id);
+        const updatedQuestions = await getQuestionsByUser(userId);
         setUserQuestions(updatedQuestions || []);
         setConfirmDelete(null);
       } catch (error) {
@@ -249,7 +263,7 @@ export default function Profile() {
   };
 
   return (
-    <>
+    <AuthGuard>
       <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
         <ReturnButton />
         
@@ -507,6 +521,6 @@ export default function Profile() {
         </section>
       </main>
       <Footer />
-    </>
+    </AuthGuard>
   );
 } 

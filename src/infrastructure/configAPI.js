@@ -3,7 +3,9 @@ const BASE_URL = 'http://localhost:8080';
 const endpoints = {
   auth: {
     register: `${BASE_URL}/Auth/register`,
-    login: `${BASE_URL}/Auth/login`
+    login: `${BASE_URL}/Auth/login`,
+    microsoftLogin: `${BASE_URL}/Auth/login-microsoft`,
+    microsoftCallback: `${BASE_URL}/Auth/microsoft-callback`
   },
   hashtags: {
     getAll: `${BASE_URL}/Hashtags`,
