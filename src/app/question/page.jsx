@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Footer from "@/components/layout/Footer";
 import QuestionHeading from "@/components/question/QuestionHeading";
@@ -14,7 +14,8 @@ import { getQuestionById, createResponse, deleteResponse } from "@/services/ques
 import { isLoggedIn, getCurrentUser } from "@/services/authService";
 import { motion } from "framer-motion";
 
-export default function QuestionDetail() {
+// Componente que usa useSearchParams envuelto para Suspense
+function QuestionDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const questionId = searchParams.get("id");
@@ -254,6 +255,21 @@ export default function QuestionDetail() {
     );
   }
 
+  // Si no hay pregunta, no mostrar nada
+  if (!question) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <main className="flex-1 space-y-6 mt-5 w-[90%] md:w-[85%] max-w-[500px] md:max-w-[800px] mx-auto">
+          <ReturnButton />
+          <div className="bg-white p-8 rounded-lg shadow-md text-center">
+            <p className="text-gray-600">No se encontró la pregunta solicitada.</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <main className="flex-1 space-y-6 mt-5 w-[90%] md:w-[85%] max-w-[500px] md:max-w-[800px] mx-auto pb-16">
@@ -263,133 +279,138 @@ export default function QuestionDetail() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="space-y-8"
+          className="space-y-6"
         >
-          {/* Cabecera de la pregunta */}
-          <motion.div variants={itemVariants}>
-            <QuestionHeading 
-              question={question} 
+          {/* Contenedor principal de la pregunta */}
+          <motion.section
+            variants={itemVariants}
+            className="bg-white p-6 md:p-8 rounded-3xl shadow-lg"
+          >
+            {/* Encabezado con título, autor y fecha */}
+            <QuestionHeading
+              question={question}
               formatDate={formatDate}
             />
-          </motion.div>
-          
-          {/* Contenido de la pregunta */}
-          <motion.div 
-            variants={itemVariants}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
-          >
-            <div className="prose max-w-none prose-img:rounded-xl break-words overflow-hidden">
-              <ReactMarkdown>{question?.content || ""}</ReactMarkdown>
+
+            {/* Contenido de la pregunta */}
+            <div className="mt-6 text-gray-700 overflow-hidden break-words prose prose-sm sm:prose">
+              <ReactMarkdown>{question.content}</ReactMarkdown>
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <StickyInteractions question={question} />
-            </div>
-          </motion.div>
-          
-          {/* Respuestas a la pregunta */}
-          <motion.div variants={itemVariants} className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <span className="bg-gradient-to-r from-primary to-[#384a64] bg-clip-text text-transparent">
-                Respuestas 
-              </span>
-              <span className="ml-2 px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                {question?.responses?.length || 0}
-              </span>
-            </h2>
-            
-            {question?.responses && question.responses.length > 0 ? (
-              <div className="space-y-6">
-                {question.responses.map((response, index) => (
-                  <motion.div 
-                    key={response.response_id} 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
+
+            {/* Hashtags */}
+            {question.hashtags && question.hashtags.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {question.hashtags.map((tag) => (
+                  <span
+                    key={typeof tag === 'object' ? tag.hashtag_id : tag}
+                    className="text-primary text-sm bg-blue-50 px-3 py-1 rounded-full"
                   >
-                    <Answer 
-                      response={response} 
-                      formatDate={formatDate}
-                      onDelete={handleDeleteResponse}
-                      isDeleting={deletingResponse}
-                    />
-                  </motion.div>
+                    #{typeof tag === 'object' ? tag.name : tag}
+                  </span>
                 ))}
               </div>
-            ) : (
-              <motion.div 
-                className="bg-gray-50 p-8 rounded-xl border border-gray-200 text-center text-gray-500"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-full flex items-center justify-center text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-                  </svg>
-                </div>
-                <p className="font-medium">Aún no hay respuestas</p>
-                <p className="mt-2">Sé el primero en responder a esta pregunta</p>
-              </motion.div>
             )}
-          </motion.div>
-          
-          {/* Formulario para enviar una nueva respuesta */}
-          <motion.div 
+
+            {/* Botones de interacción */}
+            <StickyInteractions question={question} />
+          </motion.section>
+
+          {/* Sección de respuestas */}
+          <motion.section
             variants={itemVariants}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+            className="bg-white p-6 md:p-8 rounded-3xl shadow-lg"
           >
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Tu respuesta</h3>
-            
-            <form onSubmit={handleSubmitResponse}>
-              <div className="mb-4">
-                <MDEditor
-                  value={newResponse}
-                  onChange={setNewResponse}
-                  preview="edit"
-                  height={200}
-                  className="shadow-sm rounded-xl overflow-hidden"
-                />
-              </div>
-              
-              {submitMessage && (
-                <motion.div 
-                  className={`p-3 rounded-lg mb-4 ${
-                    submitMessage.includes("Error") 
-                      ? "bg-red-50 text-red-700 border border-red-200" 
-                      : "bg-green-50 text-green-700 border border-green-200"
-                  }`}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {submitMessage}
-                </motion.div>
-              )}
-              
-              <motion.button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-primary to-[#384a64] text-white font-bold rounded-xl shadow-md hover:from-[#1e2a3d] hover:to-primary transition-all duration-300 disabled:opacity-70 flex items-center justify-center"
-                whileHover={{ translateY: -2, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Enviando respuesta...
-                  </span>
-                ) : (
-                  "Publicar respuesta"
+            <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">
+              {question.responses && question.responses.length > 0
+                ? `${question.responses.length} Respuesta${
+                    question.responses.length !== 1 ? "s" : ""
+                  }`
+                : "No hay respuestas aún"}
+            </h2>
+
+            {/* Lista de respuestas */}
+            <div className="space-y-6">
+              {question.responses &&
+                question.responses.map((response) => (
+                  <Answer
+                    key={response.response_id}
+                    response={response}
+                    onDelete={handleDeleteResponse}
+                    isDeleting={deletingResponse}
+                  />
+                ))}
+            </div>
+
+            {/* Formulario para agregar respuesta */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                Tu respuesta
+              </h3>
+
+              <form onSubmit={handleSubmitResponse}>
+                <div data-color-mode="light" className="mb-4">
+                  <MDEditor
+                    value={newResponse}
+                    onChange={setNewResponse}
+                    height={200}
+                  />
+                </div>
+
+                {submitMessage && (
+                  <div
+                    className={`mb-4 p-3 rounded-lg ${
+                      submitMessage.includes("Error")
+                        ? "bg-red-50 text-red-700"
+                        : "bg-green-50 text-green-700"
+                    }`}
+                  >
+                    {submitMessage}
+                  </div>
                 )}
-              </motion.button>
-            </form>
-          </motion.div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !newResponse.trim()}
+                    className="bg-gradient-to-r from-primary to-[#384a64] text-white px-6 py-2 rounded-xl hover:from-[#1e2a3d] hover:to-primary transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? "Enviando..." : "Publicar respuesta"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.section>
         </motion.div>
       </main>
       <Footer />
     </div>
+  );
+}
+
+// Componente principal con Suspense
+export default function QuestionDetail() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        <main className="flex-1 space-y-6 mt-5 w-[90%] md:w-[85%] max-w-[500px] md:max-w-[800px] mx-auto">
+          <ReturnButton />
+          <div className="flex flex-col justify-center items-center min-h-[60vh]">
+            <div className="w-16 h-16 relative">
+              <div className="absolute top-0 w-6 h-6 left-0 bg-primary rounded-full animate-pulse"></div>
+              <div className="absolute top-0 w-6 h-6 right-0 bg-[#384a64] rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+              <div className="absolute bottom-0 w-6 h-6 right-0 bg-primary rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
+              <div className="absolute bottom-0 w-6 h-6 left-0 bg-[#384a64] rounded-full animate-pulse" style={{ animationDelay: "0.6s" }}></div>
+            </div>
+            <p className="mt-4 text-gray-600 font-medium">Cargando pregunta...</p>
+            <div className="w-48 h-1 mt-6 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-primary to-[#384a64] animate-pulse rounded-full"></div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    }>
+      <QuestionDetailContent />
+    </Suspense>
   );
 }
