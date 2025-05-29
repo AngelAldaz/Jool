@@ -68,7 +68,7 @@ export default function LogIn() {
             >
               <img 
                 src="/JOOL.svg" 
-                alt="Jool Logo" 
+                alt="Logo de Jool" 
                 className="h-40 mx-auto drop-shadow-lg" 
               />
             </motion.a>

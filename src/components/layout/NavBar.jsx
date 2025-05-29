@@ -44,7 +44,7 @@ export default function NavBar({ onFilterChange, onSearch }) {
         <Link href="/" className="block">
         <img
           src="/JOOL.svg"
-          alt="Jool Logo"
+          alt="Logo de Jool"
             className="h-16 drop-shadow-md hover:drop-shadow-xl transition-all duration-300"
         />
       </Link>

@@ -28,7 +28,7 @@ export default function SearchBar({ onSearch }) {
       <Link href="/">
         <img
           src="/JOOL.svg"
-          alt="Jool Logo"
+          alt="Logo de Jool"
           className="hidden md:block h-14"
         />
       </Link>
@@ -48,7 +48,7 @@ export default function SearchBar({ onSearch }) {
         >
           <Image
             src="/search.svg"
-            alt="Search"
+            alt="Buscar"
             width={20}
             height={20}
             className="w-full h-full"

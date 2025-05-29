@@ -141,40 +141,40 @@ export const authHeader = () => {
     : { 'Content-Type': 'application/json' };
 };
 
-// Microsoft Authentication Service
+// Servicio de autenticación de Microsoft
 export const authService = {
-  // Initiates Microsoft authentication flow
+  // Inicia el flujo de autenticación de Microsoft
   loginWithMicrosoft: async () => {
     try {
       const response = await axios.get(`${endpoints.auth.microsoftLogin}`);
       const { redirect_url } = response.data;
       
-      // Redirect user to Microsoft login page
+      // Redireccionar al usuario a la página de login de Microsoft
       window.location.href = redirect_url;
     } catch (error) {
       throw error;
     }
   },
 
-  // Validates if the email belongs to Tecnológico de Mérida
+  // Valida si el correo pertenece al Tecnológico de Mérida
   isValidInstitutionalEmail: (email) => {
     if (!email) return false;
     return email.toLowerCase().endsWith('@merida.tecnm.mx');
   },
 
-  // Process and save authentication data from hash fragment
+  // Procesa y guarda los datos de autenticación del fragmento hash
   processAuthHash: () => {
     if (typeof window === 'undefined' || !window.location.hash) return null;
     
     try {
-      // Extract and decode data from hash (remove initial #)
+      // Extraer y decodificar datos del hash (quitar el # inicial)
       const encodedData = window.location.hash.substring(1);
       const jsonStr = decodeURIComponent(encodedData);
       const authData = JSON.parse(jsonStr);
       
-      // Validate email domain
+      // Validar el dominio del correo
       if (!authService.isValidInstitutionalEmail(authData.email)) {
-        // Clear hash from URL to prevent data exposure
+        // Limpiar el hash de la URL para prevenir exposición de datos
         window.history.replaceState(null, '', window.location.pathname);
         const errorMsg = `Acceso denegado: El correo ${authData.email} no pertenece al dominio @merida.tecnm.mx. Solo se permite acceso con correos institucionales del Tecnológico de Mérida.`;
         throw new Error(errorMsg);
@@ -213,22 +213,22 @@ export const authService = {
         return null;
       }
       
-      // Clear hash from URL to prevent data exposure
+      // Limpiar el hash de la URL para prevenir exposición de datos
       window.history.replaceState(null, '', window.location.pathname);
       
       return normalizeUserData(userData);
     } catch (error) {
-      throw error; // Re-throw the error so it can be handled by the login page
+      throw error; // Re-lanzar el error para que pueda ser manejado por la página de login
     }
   },
 
-  // Check if user is authenticated
+  // Verificar si el usuario está autenticado
   isAuthenticated: isTokenValid,
 
-  // Get current token
+  // Obtener el token actual
   getToken: getTokenFromCookies,
 
-  // Get user data from localStorage
+  // Obtener datos de usuario desde localStorage
   getUserData: getUserFromLocalStorage
 };
 

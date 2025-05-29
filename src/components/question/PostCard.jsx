@@ -19,7 +19,7 @@ export default function PostCard({ question }) {
   };
 
   if (!question) {
-    return null; // Don't render if no question data
+    return null; // No renderizar si no hay datos de la pregunta
   }
 
   return (

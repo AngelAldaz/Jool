@@ -49,7 +49,7 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching questions:", error);
       setError(error.message || "Error al cargar las preguntas");
-      // If token is invalid, redirect to login
+      // Si el token es inválido, redireccionar a login
       if (error.message.includes("Authentication") || error.message.includes("401")) {
         router.push("/login");
       }

@@ -10,7 +10,7 @@ const api = axios.create({
   },
 });
 
-// Interceptor to add token to all requests
+// Interceptor para añadir token a todas las peticiones
 api.interceptors.request.use(
   (config) => {
     const token = authService.getToken();
@@ -24,14 +24,14 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor to handle authentication errors
+// Interceptor para manejar errores de autenticación
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If we receive a 401 Unauthorized, the token has expired
+    // Si recibimos un 401 Unauthorized, el token ha expirado
     if (error.response && error.response.status === 401) {
       authService.logout();
-      // Redirect to login page
+      // Redirigir a la página de login
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }

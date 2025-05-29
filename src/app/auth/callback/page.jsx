@@ -31,7 +31,7 @@ export default function AuthCallback() {
     }
   }, [router]);
   
-  // If there's an error, show message
+  // Si hay un error, mostrar mensaje
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -54,7 +54,7 @@ export default function AuthCallback() {
     );
   }
   
-  // Show loading indicator while processing authentication
+  // Mostrar indicador de carga mientras se procesa la autenticación
   return (
     <div className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 text-center">

@@ -159,7 +159,7 @@ export default function SignUp() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <img src="/JOOL.svg" alt="Jool Logo" className="h-32 mx-auto drop-shadow-lg" />
+              <img src="/JOOL.svg" alt="Logo de Jool" className="h-32 mx-auto drop-shadow-lg" />
             </motion.a>
             <motion.h1 
               className="mt-4 text-3xl font-bold bg-gradient-to-r from-primary to-[#384a64] bg-clip-text text-transparent"
