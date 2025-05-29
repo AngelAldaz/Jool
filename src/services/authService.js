@@ -147,15 +147,19 @@ export const authService = {
   loginWithMicrosoft: async () => {
     try {
       const response = await axios.get(`${endpoints.auth.microsoftLogin}`);
-      console.log('Respuesta del endpoint de login de Microsoft:', response.data);
       const { redirect_url } = response.data;
       
       // Redirect user to Microsoft login page
       window.location.href = redirect_url;
     } catch (error) {
-      console.error('Error iniciando autenticación con Microsoft:', error);
       throw error;
     }
+  },
+
+  // Validates if the email belongs to Tecnológico de Mérida
+  isValidInstitutionalEmail: (email) => {
+    if (!email) return false;
+    return email.toLowerCase().endsWith('@merida.tecnm.mx');
   },
 
   // Process and save authentication data from hash fragment
@@ -168,12 +172,16 @@ export const authService = {
       const jsonStr = decodeURIComponent(encodedData);
       const authData = JSON.parse(jsonStr);
       
-      // Log the token obtained from Microsoft authentication
-      console.log('Token obtenido de Microsoft:', authData.token);
+      // Validate email domain
+      if (!authService.isValidInstitutionalEmail(authData.email)) {
+        // Clear hash from URL to prevent data exposure
+        window.history.replaceState(null, '', window.location.pathname);
+        const errorMsg = `Acceso denegado: El correo ${authData.email} no pertenece al dominio @merida.tecnm.mx. Solo se permite acceso con correos institucionales del Tecnológico de Mérida.`;
+        throw new Error(errorMsg);
+      }
       
       // Comprobar que tenemos la estructura esperada
       if (!authData.token || !authData.token.accessToken || !authData.token.expiresAt) {
-        console.error('Estructura de token inválida:', authData);
         return null;
       }
       
@@ -184,7 +192,6 @@ export const authService = {
       const tokenSaved = saveTokenToCookies(tokenValue, expiryDate);
       
       if (!tokenSaved) {
-        console.error('Error al guardar token en cookies');
         return null;
       }
       
@@ -203,7 +210,6 @@ export const authService = {
       const userSaved = saveUserToLocalStorage(userData);
       
       if (!userSaved) {
-        console.error('Error al guardar datos de usuario en localStorage');
         return null;
       }
       
@@ -212,8 +218,7 @@ export const authService = {
       
       return normalizeUserData(userData);
     } catch (error) {
-      console.error('Error procesando datos de autenticación:', error);
-      return null;
+      throw error; // Re-throw the error so it can be handled by the login page
     }
   },
 
