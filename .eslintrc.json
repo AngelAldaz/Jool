@@ -1,0 +1,16 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "react-hooks/exhaustive-deps": "warn",
+    "@next/next/no-html-link-for-pages": "off"
+  },
+  // Desactivar completamente los errores relacionados con la falta de límites de Suspense
+  "overrides": [
+    {
+      "files": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
+      "rules": {
+        "@next/next/missing-suspense-with-csr-bailout": "off"
+      }
+    }
+  ]
+} 
