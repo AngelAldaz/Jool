@@ -36,7 +36,7 @@ export default function SearchBar({ onSearch }) {
         <input
           type="text"
           placeholder="Buscar"
-          className="flex-grow p-4 text-xl text-text bg-transparent focus:outline-none min-w-0"
+          className="flex-grow p-2 px-4 text-xl text-text bg-transparent focus:outline-none min-w-0"
           value={searchQuery}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}

@@ -31,7 +31,7 @@ export default function UserButton() {
   if (loggedIn) {
     return (
       <div className="relative group">
-        <button className="py-1 px-3 rounded-full bg-primary hover:cursor-pointer block">
+        <button className="p-1.5 rounded-full bg-primary hover:cursor-pointer block">
           {userData ? (
             <Avatar user={userData} size="md" />
           ) : (

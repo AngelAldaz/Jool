@@ -23,14 +23,14 @@ export default function NavBar({ onFilterChange, onSearch }) {
         <img
           src="/JOOL.svg"
           alt="Jool Logo"
-          className="block md:hidden h-20 mx-auto "
+          className="block md:hidden h-20 mx-auto"
         />
       </Link>
       <div className="md:hidden block">
         <UserButton />
       </div>
-      <nav className="flex justify-center gap-3 md:mt-5">
-        <div className="md:block hidden">
+      <nav className="flex items-center justify-center md:mt-5">
+        <div className="md:flex hidden items-center mr-3">
           <UserButton />
         </div>
         <SearchBar onSearch={handleSearch} />
