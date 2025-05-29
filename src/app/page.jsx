@@ -128,7 +128,7 @@ export default function Home() {
   return (
     <AuthGuard>
       <NavBar onFilterChange={handleFilterChange} onSearch={handleSearch} />
-      <main className="flex-1 space-y-6 mt-5 w-4/5 mx-auto">
+      <main className="flex-1 space-y-6 mt-5 w-[90%] md:w-[85%] max-w-[500px] md:max-w-[800px] mx-auto">
         {renderContent()}
       </main>
       <Footer />

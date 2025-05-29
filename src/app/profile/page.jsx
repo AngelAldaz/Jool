@@ -4,18 +4,16 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/layout/Footer";
 import ReturnButton from "@/components/layout/ReturnButton";
-import MDEditor from "@uiw/react-md-editor";
 import { getCurrentUser } from "@/services/authService";
-import { createQuestion, getQuestionsByUser, deleteQuestion } from "@/services/questionService";
-import { getAllHashtags } from "@/services/hashtagService";
+import { getQuestionsByUser, deleteQuestion } from "@/services/questionService";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Avatar from "@/components/ui/Avatar";
-import HashtagInput from "@/components/form/HashtagInput";
 import HashtagBadge from "@/components/ui/HashtagBadge";
 import StatusMessage from "@/components/ui/StatusMessage";
-import LoadingSpinner, { FullPageLoading } from "@/components/ui/LoadingSpinner";
+import { FullPageLoading } from "@/components/ui/LoadingSpinner";
 import { formatDate } from "@/utils/dateUtils";
 import { getUserId, getUsername } from "@/utils/userUtils";
+import Link from "next/link";
 
 export default function Profile() {
   const router = useRouter();
@@ -25,20 +23,6 @@ export default function Profile() {
   const [userQuestions, setUserQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Estados para el formulario de nueva pregunta
-  const [newQuestion, setNewQuestion] = useState({
-    title: "",
-    content: "",
-    hashtags: []
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitMessageType, setSubmitMessageType] = useState("info");
-  
-  // Estados para hashtags
-  const [availableHashtags, setAvailableHashtags] = useState([]);
-  const [hashtagsLoading, setHashtagsLoading] = useState(false);
   
   // Estados para eliminar preguntas
   const [deletingQuestion, setDeletingQuestion] = useState(false);
@@ -83,115 +67,6 @@ export default function Profile() {
 
     loadUserData();
   }, [router]);
-
-  // Cargar hashtags disponibles al montar el componente
-  useEffect(() => {
-    const fetchHashtags = async () => {
-      setHashtagsLoading(true);
-      try {
-        const hashtags = await getAllHashtags();
-        setAvailableHashtags(hashtags || []);
-      } catch (error) {
-        console.error("Error al cargar hashtags:", error);
-        // No mostrar error fatal, simplemente seguir con array vacío
-        setAvailableHashtags([]);
-      } finally {
-        setHashtagsLoading(false);
-      }
-    };
-
-    fetchHashtags();
-  }, []);
-
-  // Función para manejar cambios en el título
-  const handleTitleChange = (e) => {
-    setNewQuestion(prev => ({
-      ...prev,
-      title: e.target.value
-    }));
-  };
-
-  // Función para manejar cambios en el contenido (Markdown)
-  const handleContentChange = (value) => {
-    setNewQuestion(prev => ({
-      ...prev,
-      content: value
-    }));
-  };
-
-  // Función para añadir un hashtag a la pregunta
-  const handleAddHashtag = (hashtagName) => {
-    if (!newQuestion.hashtags.includes(hashtagName)) {
-      setNewQuestion(prev => ({
-        ...prev,
-        hashtags: [...prev.hashtags, hashtagName]
-      }));
-    }
-  };
-
-  // Función para remover un hashtag de la pregunta
-  const handleRemoveHashtag = (hashtagToRemove) => {
-    setNewQuestion(prev => ({
-      ...prev,
-      hashtags: prev.hashtags.filter(tag => tag !== hashtagToRemove)
-    }));
-  };
-
-  // Función para manejar el envío de la nueva pregunta
-  const handleSubmitQuestion = async (e) => {
-    e.preventDefault();
-
-    if (!newQuestion.title.trim() || !newQuestion.content.trim()) {
-      setSubmitMessage("Por favor, completa todos los campos obligatorios.");
-      setSubmitMessageType("warning");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmitMessage("");
-
-    try {
-      // Obtener el ID de usuario de manera segura
-      const userId = getUserId(user);
-      if (!userId) {
-        throw new Error("No se pudo determinar el ID del usuario");
-      }
-      
-      // Crear objeto de pregunta con el ID correcto
-      const questionData = {
-        title: newQuestion.title,
-        content: newQuestion.content,
-        user_id: userId,
-        hashtags: newQuestion.hashtags
-      };
-      
-      console.log("Enviando pregunta:", questionData);
-      
-      // Enviar pregunta al servidor
-      const createdQuestion = await createQuestion(questionData);
-      console.log("Pregunta creada:", createdQuestion);
-      
-      setSubmitMessage("¡Pregunta creada correctamente!");
-      setSubmitMessageType("success");
-      
-      // Limpiar el formulario
-      setNewQuestion({
-        title: "",
-        content: "",
-        hashtags: []
-      });
-      
-      // Actualizar la lista de preguntas del usuario
-      const updatedQuestions = await getQuestionsByUser(userId);
-      setUserQuestions(updatedQuestions);
-    } catch (error) {
-      console.error("Error al crear pregunta:", error);
-      setSubmitMessage(`Error al enviar la pregunta: ${error.message}`);
-      setSubmitMessageType("error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Función para manejar la eliminación de preguntas
   const handleDeleteQuestion = async (questionId, e) => {
@@ -280,88 +155,28 @@ export default function Profile() {
           </div>
         </section>
         
-        {/* Formulario para nueva pregunta */}
-        <section className="rounded-4xl p-6 md:p-8 bg-white shadow-card">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">Crear nueva pregunta</h2>
-          
-          <form onSubmit={handleSubmitQuestion} className="space-y-4">
-            <div>
-              <label 
-                htmlFor="title" 
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Título de la pregunta
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={newQuestion.title}
-                onChange={handleTitleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Escribe un título descriptivo"
-                required
-              />
-            </div>
-            
-            <div data-color-mode="light">
-              <label
-                htmlFor="content"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Contenido de la pregunta (puedes usar Markdown)
-              </label>
-              <MDEditor
-                id="content"
-                value={newQuestion.content}
-                onChange={handleContentChange}
-              />
-            </div>
-            
-            <div>
-              <label
-                htmlFor="hashtags"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Hashtags
-              </label>
-              
-              <HashtagInput
-                selectedTags={newQuestion.hashtags}
-                onAddTag={handleAddHashtag}
-                onRemoveTag={handleRemoveHashtag}
-                availableTags={availableHashtags}
-                isLoading={hashtagsLoading}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                disabled={isSubmitting || !newQuestion.title.trim() || !newQuestion.content.trim()}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors hover:cursor-pointer"
-              >
-                {isSubmitting ? "Enviando..." : "Publicar pregunta"}
-              </button>
-
-              {submitMessage && (
-                <StatusMessage 
-                  message={submitMessage} 
-                  type={submitMessageType}
-                  onClose={() => setSubmitMessage("")}
-                />
-              )}
-            </div>
-          </form>
-        </section>
-        
         {/* Listado de preguntas del usuario */}
         <section className="rounded-4xl p-6 md:p-8 bg-white shadow-card">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">Mis preguntas</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl md:text-2xl font-bold">Mis preguntas</h2>
+            <Link href="/new-question">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Nueva pregunta
+              </button>
+            </Link>
+          </div>
           
           {userQuestions.length === 0 ? (
-            <p className="text-gray-500 text-center py-6">
-              Aún no has publicado ninguna pregunta
-            </p>
+            <div className="text-center py-10">
+              <p className="text-gray-500 mb-4">
+                Aún no has publicado ninguna pregunta
+              </p>
+              <Link href="/new-question">
+                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                  Crear mi primera pregunta
+                </button>
+              </Link>
+            </div>
           ) : (
             <div className="space-y-4">
               {userQuestions.map(question => (
