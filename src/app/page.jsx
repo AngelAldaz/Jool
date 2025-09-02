@@ -23,19 +23,19 @@ export default function Home() {
   useEffect(() => {
     // Fetch questions
     fetchQuestions();
-    
+
     // Activar animación después de un breve retraso
     const timer = setTimeout(() => {
       setAnimateIn(true);
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   // Efecto para aplicar filtros cuando cambian las preguntas o filtros
   useEffect(() => {
     if (questions.length === 0) return;
-    
+
     applyFiltersAndSearch();
   }, [questions, activeFilter, searchQuery]);
 
@@ -70,7 +70,7 @@ export default function Home() {
 
   const applyFiltersAndSearch = () => {
     let result = [...questions];
-    
+
     // Aplicar filtro
     if (activeFilter === "Nuevo") {
       // Ordenar por fecha (más reciente primero)
@@ -82,20 +82,20 @@ export default function Home() {
       // Ordenar por número de vistas (mayor a menor)
       result = result.sort((a, b) => b.views - a.views);
     }
-    
+
     // Aplicar búsqueda si hay una
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(q => 
-        q.title.toLowerCase().includes(query) || 
-        q.content.toLowerCase().includes(query) || 
+      result = result.filter(q =>
+        q.title.toLowerCase().includes(query) ||
+        q.content.toLowerCase().includes(query) ||
         (q.hashtags && q.hashtags.some(h => {
           const tagName = typeof h === 'object' ? h.name : h;
           return tagName.toLowerCase().includes(query);
         }))
       );
     }
-    
+
     setFilteredQuestions(result);
   };
 
@@ -111,7 +111,7 @@ export default function Home() {
         </div>
       );
     }
-    
+
     if (error) {
       return (
         <div className="py-8 px-6 bg-red-50 rounded-2xl border border-red-200 shadow-inner min-h-[60vh] flex items-center justify-center">
@@ -119,7 +119,7 @@ export default function Home() {
         </div>
       );
     }
-    
+
     if (filteredQuestions.length === 0) {
       return (
         <div className="text-center py-16 bg-gradient-to-b from-white to-gray-100 rounded-3xl shadow-inner min-h-[60vh] flex flex-col items-center justify-center">
@@ -127,12 +127,12 @@ export default function Home() {
             {searchQuery ? "No se encontraron resultados para tu búsqueda" : "No hay preguntas disponibles"}
           </h3>
           <p className="mt-2 text-gray-500 mb-6">
-            {searchQuery 
-              ? "Intenta con otra búsqueda o filtro" 
+            {searchQuery
+              ? "Intenta con otra búsqueda o filtro"
               : "¡Sé el primero en publicar una pregunta!"
             }
           </p>
-          
+
           {!searchQuery && (
             <Link href="/new-question">
               <button className="bg-gradient-to-r from-primary to-[#384a64] text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 hover:from-[#1e2a3d] hover:to-primary transform hover:scale-105 font-bold">
@@ -143,14 +143,14 @@ export default function Home() {
         </div>
       );
     }
-    
+
     return (
       <div className={`space-y-6 transition-all duration-500 ease-out ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
         {filteredQuestions.map((question, index) => (
-          <div 
-            key={question.question_id} 
+          <div
+            key={question.question_id}
             className="transition-all duration-500"
-            style={{ 
+            style={{
               transitionDelay: `${index * 100}ms`,
               transform: animateIn ? 'translateY(0)' : 'translateY(20px)',
               opacity: animateIn ? 1 : 0

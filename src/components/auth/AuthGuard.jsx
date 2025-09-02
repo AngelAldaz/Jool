@@ -7,13 +7,13 @@ export default function AuthGuard({ children }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
-  
+
   useEffect(() => {
     // Verificar autenticación
     const checkAuth = () => {
       const authenticated = authService.isAuthenticated();
       console.log('AuthGuard - Estado de autenticación:', authenticated);
-      
+
       if (!authenticated) {
         console.log('AuthGuard - Usuario no autenticado, redirigiendo a login');
         router.replace('/login');
@@ -23,10 +23,10 @@ export default function AuthGuard({ children }) {
       }
       setLoading(false);
     };
-    
+
     checkAuth();
   }, [router]);
-  
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -37,6 +37,6 @@ export default function AuthGuard({ children }) {
       </div>
     );
   }
-  
+
   return isAuth ? children : null;
 } 

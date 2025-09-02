@@ -1,4 +1,4 @@
-const BASE_URL = 'http://159.65.178.199:8080';
+const BASE_URL = 'http://localhost:8080';
 
 const endpoints = {
   auth: {
