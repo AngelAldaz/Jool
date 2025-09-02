@@ -1,4 +1,4 @@
-const BASE_URL = 'https://refined-portion-substance-rendered.trycloudflare.com/';
+const BASE_URL = 'https://refined-portion-substance-rendered.trycloudflare.com';
 
 const endpoints = {
   auth: {
